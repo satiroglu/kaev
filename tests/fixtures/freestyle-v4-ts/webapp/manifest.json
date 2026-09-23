@@ -1,0 +1,1 @@
+{"sap.app":{"id":"demo.v4","type":"application"},"sap.ui5":{"rootView":"demo.v4.view.Main","models":{"":{"type":"sap.ui.model.odata.v4.ODataModel"}}}}

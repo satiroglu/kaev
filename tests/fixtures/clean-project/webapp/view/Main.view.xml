@@ -1,0 +1,1 @@
+<mvc:View xmlns:mvc="sap.ui.core.mvc" xmlns="sap.m"><Page id="page" title="Clean"><Button id="save" text="Save" /></Page></mvc:View>

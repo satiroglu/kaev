@@ -1,0 +1,1 @@
+{"sap.app":{"id":"demo.v2","type":"application","dataSources":{"main":{"type":"OData","uri":"/sap/opu/odata/sap/DEMO/","settings":{"odataVersion":"2.0"}}}},"sap.ui5":{"rootView":"demo.v2.view.Main","models":{"":{"dataSource":"main"}}}}

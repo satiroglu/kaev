@@ -1,0 +1,15 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.5.14/schema.json",
+  "files": {
+    "includes": [
+      "src/**",
+      "tests/**/*.ts",
+      "scripts/**",
+      "*.json",
+      "!package-lock.json",
+      "!tests/fixtures"
+    ]
+  },
+  "formatter": { "indentStyle": "space", "lineWidth": 100 },
+  "linter": { "enabled": true, "rules": { "preset": "recommended" } }
+}

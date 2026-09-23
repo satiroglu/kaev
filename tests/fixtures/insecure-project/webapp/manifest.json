@@ -1,0 +1,1 @@
+{"sap.app":{"id":"demo.insecure","type":"application","dataSources":{"main":{"type":"OData","uri":"http://backend.internal/sap/opu/odata/sap/DEMO/"}}},"sap.ui5":{"rootView":"demo.insecure.view.Main"}}

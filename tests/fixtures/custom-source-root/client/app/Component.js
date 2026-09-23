@@ -1,0 +1,1 @@
+sap.ui.define(["sap/ui/core/UIComponent"], function(UIComponent) { return UIComponent.extend("demo.custom.Component", {metadata: {manifest: "json"}}); });
