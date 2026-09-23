@@ -30,7 +30,9 @@ try {
     ).stdout,
   )[0];
   assert(
-    packed.files.every((file) => /^(?:dist\/|docs\/|README.md$|package.json$)/.test(file.path)),
+    packed.files.every((file) =>
+      /^(?:dist\/|docs\/|LICENSE$|README.md$|package.json$)/.test(file.path),
+    ),
     "Unexpected files in npm package",
   );
   const tarball = path.join(temporary, packed.filename);

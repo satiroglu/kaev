@@ -3,7 +3,10 @@
   "version": "0.1.0",
   "description": "Local SAPUI5/Fiori project health, security and architecture analysis",
   "type": "module",
-  "license": "UNLICENSED",
+  "license": "SEE LICENSE IN LICENSE",
+  "publishConfig": {
+    "access": "public"
+  },
   "bin": {
     "kaev": "dist/cli/cli.js"
   },
