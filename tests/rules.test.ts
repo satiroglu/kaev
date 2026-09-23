@@ -7,52 +7,52 @@ import { context } from "./helpers.js";
 const model = "const model = this.getOwnerComponent().getModel();";
 const cases = [
   [
-    "ZET-ODATA-001",
+    "KAEV-ODATA-001",
     `${model} model.read('/Orders', {success(data) { return data.results.filter(x => x.open); }});`,
     "const localOptions = []; localOptions.filter(x => x);",
   ],
   [
-    "ZET-ODATA-002",
+    "KAEV-ODATA-002",
     `${model} model.read('/Orders', {success: function(data) { return data.results.sort(); }});`,
     "const data = {results: []}; data.results.sort();",
   ],
-  ["ZET-ODATA-003", `${model} model.setSizeLimit(99999);`, `${model} model.setSizeLimit(100);`],
+  ["KAEV-ODATA-003", `${model} model.setSizeLimit(99999);`, `${model} model.setSizeLimit(100);`],
   [
-    "ZET-ARCH-001",
+    "KAEV-ARCH-001",
     'fetch("/sap/opu/odata/sap/TEST/Orders");',
     'fetch("https://example.org/weather");',
   ],
-  ["ZET-ARCH-002", 'element.innerHTML = "hello";', 'document.querySelector("button");'],
+  ["KAEV-ARCH-002", 'element.innerHTML = "hello";', 'document.querySelector("button");'],
   [
-    "ZET-PERF-001",
+    "KAEV-PERF-001",
     `${model} for (const item of items) { model.refresh(); }`,
     `${model} model.refresh();`,
   ],
   [
-    "ZET-SEC-001",
+    "KAEV-SEC-001",
     'const apiKey = "sk_live_9Az7bQ2mX4pR8tUv";',
     'const password = "placeholder"; const passwordLabel = "Password";',
   ],
   [
-    "ZET-SEC-002",
+    "KAEV-SEC-002",
     'localStorage.setItem("accessToken", accessToken);',
     'localStorage.setItem("theme", "dark");',
   ],
-  ["ZET-SEC-003", "element.innerHTML = userInput;", 'element.innerHTML = "<b>Hello</b>";'],
-  ["ZET-SEC-004", "eval(code); new Function(code);", "JSON.parse(data);"],
+  ["KAEV-SEC-003", "element.innerHTML = userInput;", 'element.innerHTML = "<b>Hello</b>";'],
+  ["KAEV-SEC-004", "eval(code); new Function(code);", "JSON.parse(data);"],
   [
-    "ZET-SEC-005",
+    "KAEV-SEC-005",
     'fetch("http://backend.internal/service");',
     'fetch("http://localhost:4004/service");',
   ],
-  ["ZET-SEC-006", "console.log(accessToken);", 'console.log("Loaded", itemCount);'],
+  ["KAEV-SEC-006", "console.log(accessToken);", 'console.log("Loaded", itemCount);'],
   [
-    "ZET-SEC-007",
+    "KAEV-SEC-007",
     'if (user.isAdmin) { this.byId("deleteButton").setVisible(true); }',
     'if (busy) { this.byId("saveButton").setEnabled(false); }',
   ],
   [
-    "ZET-SEC-008",
+    "KAEV-SEC-008",
     'fetch("/sap/opu/odata/sap/TEST/Orders", {method: "POST"});',
     'fetch("/thirdparty/Orders", {method: "POST"});',
   ],
@@ -90,7 +90,7 @@ it("detects structured credentials with exact location but not harmless strings"
     "webapp/config.json":
       '{\n  "apiKey": "sk_live_9Az7bQ2mX4pR8tUv",\n  "passwordLabel": "Password"\n}',
   });
-  const rule = sourceRules.find((r) => r.meta.id === "ZET-SEC-001");
+  const rule = sourceRules.find((r) => r.meta.id === "KAEV-SEC-001");
   expect(await rule?.run(c)).toEqual([
     expect.objectContaining({
       file: "webapp/config.json",
@@ -102,12 +102,12 @@ it("detects structured credentials with exact location but not harmless strings"
 });
 it("reports exact AST line and column", async () => {
   const f = await sourceRules
-    .find((r) => r.meta.id === "ZET-SEC-004")
+    .find((r) => r.meta.id === "KAEV-SEC-004")
     ?.run(context("\n  eval(code);"));
   expect(f?.[0]).toMatchObject({ line: 2, column: 3 });
 });
 it("scopes stable IDs to flexibility-enabled freestyle apps", async () => {
-  const rule = projectRules.find((r) => r.meta.id === "ZET-UI5-001");
+  const rule = projectRules.find((r) => r.meta.id === "KAEV-UI5-001");
   const c = context("", {
     "webapp/Main.view.xml":
       '<mvc:View xmlns:mvc="sap.ui.core.mvc" xmlns="sap.m"><Button text="Go"/><Button id="save"/></mvc:View>',
@@ -117,7 +117,7 @@ it("scopes stable IDs to flexibility-enabled freestyle apps", async () => {
   expect(await rule?.run(c)).toHaveLength(1);
 });
 it("accepts explicitly sanitized UI5 HTML controls", async () => {
-  const rule = sourceRules.find((r) => r.meta.id === "ZET-SEC-003");
+  const rule = sourceRules.find((r) => r.meta.id === "KAEV-SEC-003");
   expect(
     await rule?.run(context("new sap.ui.core.HTML({content: input, sanitizeContent: true});")),
   ).toEqual([]);

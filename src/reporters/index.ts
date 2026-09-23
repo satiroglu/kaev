@@ -19,7 +19,7 @@ export function terminal(r: AnalysisResult, o: DisplayOptions = {}): string {
   const lines = o.quiet
     ? []
     : [
-        `ZETVIK v${r.zetvikVersion}`,
+        `KAEV v${r.kaevVersion}`,
         "",
         `${r.project.packageName ?? "Project"} · ${r.project.framework} ${r.project.projectType}`,
         `UI5 ${r.project.ui5Version ?? "unknown"} · CLI spec ${r.project.ui5SpecVersion ?? "unknown"} · ${r.project.appType} · ${r.project.language} · OData ${r.project.odata}`,
@@ -70,9 +70,9 @@ function escapeMarkdown(value: string): string {
 export function markdown(r: AnalysisResult): string {
   const e = escapeMarkdown;
   const lines = [
-    `# Zetvik project report`,
+    `# Kaev project report`,
     "",
-    `Version: ${r.zetvikVersion} · Generated: ${r.generatedAt}`,
+    `Version: ${r.kaevVersion} · Generated: ${r.generatedAt}`,
     "",
     `Project: ${e(r.project.packageName ?? "unnamed")}`,
     "",

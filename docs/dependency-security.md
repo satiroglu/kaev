@@ -4,7 +4,7 @@ Reviewed 2026-09-23. `@ui5/linter` 1.23.6 is pinned and ships its own npm-shrink
 
 The underlying advisories concern pacote's Git reference processing and sigstore's signature-verification constraints. The affected versions are pacote 19.0.2, sigstore 3.1.0 and @sigstore/core 2.0.0, plus their parent/dependent packages. Upstream's shrinkwrap retains these versions. A root-level override did not change the installed versions and was removed rather than presenting an ineffective mitigation as a fix.
 
-Zetvik's adapter constructs a single root project with framework/dependency resolution disabled by the official Node API implementation. It does not download, install, resolve Git packages or verify package signatures. Network entry points are blocked before importing the analyzer; the subprocess has no filesystem write or child-process permissions. Those controls reduce reachability of the affected paths in this integration, but do not erase third-party advisories.
+Kaev's adapter constructs a single root project with framework/dependency resolution disabled by the official Node API implementation. It does not download, install, resolve Git packages or verify package signatures. Network entry points are blocked before importing the analyzer; the subprocess has no filesystem write or child-process permissions. Those controls reduce reachability of the affected paths in this integration, but do not erase third-party advisories.
 
 This is a documented release risk, not a claim of a clean dependency audit. Review the upstream dependency changes before distributing a release. Run `npm audit --omit=dev` to obtain the current advisory state. Do not apply unsupported dependency overrides without testing the actual installed package tree.
 

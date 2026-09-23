@@ -7,7 +7,7 @@ import path from "node:path";
 const npmCli = process.env.npm_execpath;
 if (!npmCli) throw new Error("Run with npm run test:pack.");
 const repository = process.cwd();
-const temporary = await realpath(await mkdtemp(path.join(tmpdir(), "zetvik-pack-")));
+const temporary = await realpath(await mkdtemp(path.join(tmpdir(), "kaev-pack-")));
 function execute(file, args, cwd, expected = 0) {
   const result = spawnSync(file, args, {
     cwd,
@@ -48,7 +48,7 @@ try {
     ],
     repository,
   );
-  const cli = path.join(temporary, "node_modules/zetvik/dist/cli/cli.js");
+  const cli = path.join(temporary, "node_modules/@satiroglu/kaev/dist/cli/cli.js");
   assert.equal(execute(process.execPath, [cli, "--version"], temporary).stdout.trim(), "0.1.0");
   assert(execute(process.execPath, [cli, "--help"], temporary).stdout.includes("doctor"));
   for (const [name, expected] of [
@@ -84,7 +84,7 @@ try {
     [cli, "report", "--no-ui5-lint", "--output", path.join(temporary, "report.md")],
     clean,
   );
-  assert((await readFile(path.join(temporary, "report.md"), "utf8")).includes("# Zetvik"));
+  assert((await readFile(path.join(temporary, "report.md"), "utf8")).includes("# Kaev"));
   execute(
     process.execPath,
     [

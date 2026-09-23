@@ -17,7 +17,7 @@ export async function runDoctor(root: string): Promise<{ output: string; ready: 
     project.sourceRoots.length > 0 &&
     !workspace.diagnostics.some((d) => ["parse", "filesystem", "configuration"].includes(d.code));
   const lines = [
-    "Zetvik Doctor",
+    "Kaev Doctor",
     "",
     `Node.js ${process.versions.node}`,
     `Project: ${project.detected ? "UI5 detected" : "not identified"}`,

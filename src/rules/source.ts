@@ -47,7 +47,7 @@ export const sourceRules: Rule[] = [
   ...(["filter", "sort"] as const).map((operation, i) =>
     sourceRule(
       {
-        id: `ZET-ODATA-00${i + 1}`,
+        id: `KAEV-ODATA-00${i + 1}`,
         title: `Potential client-side ${operation === "filter" ? "filtering" : "sorting"} of OData results`,
         category: "odata",
         severity: "medium",
@@ -68,7 +68,7 @@ export const sourceRules: Rule[] = [
   ),
   sourceRule(
     {
-      id: "ZET-ODATA-003",
+      id: "KAEV-ODATA-003",
       title: "Unusually large model size limit",
       category: "odata",
       severity: "medium",
@@ -90,7 +90,7 @@ export const sourceRules: Rule[] = [
   ),
   sourceRule(
     {
-      id: "ZET-ARCH-001",
+      id: "KAEV-ARCH-001",
       title: "Direct OData networking",
       category: "architecture",
       severity: "medium",
@@ -107,7 +107,7 @@ export const sourceRules: Rule[] = [
   ),
   sourceRule(
     {
-      id: "ZET-ARCH-002",
+      id: "KAEV-ARCH-002",
       title: "Direct DOM mutation in UI5 controller",
       category: "architecture",
       severity: "low",
@@ -127,7 +127,7 @@ export const sourceRules: Rule[] = [
   ),
   sourceRule(
     {
-      id: "ZET-PERF-001",
+      id: "KAEV-PERF-001",
       title: "Model refresh inside a loop",
       category: "performance",
       severity: "medium",
@@ -159,7 +159,7 @@ export const sourceRules: Rule[] = [
   ),
   sourceRule(
     {
-      id: "ZET-SEC-001",
+      id: "KAEV-SEC-001",
       title: "Potential hardcoded credential",
       category: "security",
       severity: "critical",
@@ -187,7 +187,7 @@ export const sourceRules: Rule[] = [
   ),
   sourceRule(
     {
-      id: "ZET-SEC-002",
+      id: "KAEV-SEC-002",
       title: "Sensitive browser storage",
       category: "security",
       severity: "high",
@@ -208,7 +208,7 @@ export const sourceRules: Rule[] = [
   ),
   sourceRule(
     {
-      id: "ZET-SEC-003",
+      id: "KAEV-SEC-003",
       title: "Dynamic HTML requires sanitization review",
       category: "security",
       severity: "high",
@@ -245,7 +245,7 @@ export const sourceRules: Rule[] = [
   ),
   sourceRule(
     {
-      id: "ZET-SEC-004",
+      id: "KAEV-SEC-004",
       title: "Dynamic code execution",
       category: "security",
       severity: "high",
@@ -262,7 +262,7 @@ export const sourceRules: Rule[] = [
   ),
   sourceRule(
     {
-      id: "ZET-SEC-005",
+      id: "KAEV-SEC-005",
       title: "Unencrypted backend endpoint",
       category: "security",
       severity: "high",
@@ -279,7 +279,7 @@ export const sourceRules: Rule[] = [
   ),
   sourceRule(
     {
-      id: "ZET-SEC-006",
+      id: "KAEV-SEC-006",
       title: "Sensitive value passed to logging",
       category: "security",
       severity: "high",
@@ -305,7 +305,7 @@ export const sourceRules: Rule[] = [
   ),
   sourceRule(
     {
-      id: "ZET-SEC-007",
+      id: "KAEV-SEC-007",
       title: "Client-side authorization-related logic",
       category: "security",
       severity: "high",
@@ -344,7 +344,7 @@ export const sourceRules: Rule[] = [
   ),
   sourceRule(
     {
-      id: "ZET-SEC-008",
+      id: "KAEV-SEC-008",
       title: "Manual OData write requires CSRF review",
       category: "security",
       severity: "high",

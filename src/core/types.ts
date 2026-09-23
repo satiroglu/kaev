@@ -98,7 +98,7 @@ export interface RuleStatus {
 }
 export interface AnalysisResult {
   schemaVersion: 1;
-  zetvikVersion: string;
+  kaevVersion: string;
   generatedAt: string;
   project: Omit<ProjectContext, "rootPath" | "services" | "models">;
   scores: { projectHealth: number | null; securityPosture: number | null; partial: boolean };

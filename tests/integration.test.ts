@@ -23,7 +23,7 @@ import { json, markdown, terminal } from "../src/reporters/index.js";
 const fixture = (name: string) => path.resolve("tests/fixtures", name);
 const temps: string[] = [];
 async function temporary() {
-  const dir = await realpath(await mkdtemp(path.join(tmpdir(), "zetvik-test-")));
+  const dir = await realpath(await mkdtemp(path.join(tmpdir(), "kaev-test-")));
   temps.push(dir);
   return dir;
 }
@@ -62,7 +62,7 @@ it("never overwrites an existing report or follows a report symlink", async () =
   const r = await analyzeProject(fixture("clean-project"), { ui5Lint: false });
   const dir = await temporary();
   const output = await createReport(r, dir, "markdown");
-  expect(await readFile(output, "utf8")).toContain("# Zetvik");
+  expect(await readFile(output, "utf8")).toContain("# Kaev");
   await expect(createReport(r, dir, "markdown")).rejects.toThrow("never overwritten");
   await writeFile(path.join(dir, "secret.md"), "unchanged");
   await symlink(path.join(dir, "secret.md"), path.join(dir, "link.md"));
@@ -117,7 +117,7 @@ it("CLI help, version, JSON, report and failures have stable behavior", async ()
   const dir = await temporary();
   const out = path.join(dir, "report.md");
   expect(run(["report", "--no-ui5-lint", "--output", out]).status).toBe(0);
-  expect(await readFile(out, "utf8")).toContain("# Zetvik");
+  expect(await readFile(out, "utf8")).toContain("# Kaev");
 }, 20000);
 it("blocks networking in the analyzer process without changing the parent process", () => {
   const uri = pathToFileURL(path.resolve("dist/adapters/ui5-linter/offline.js")).href;

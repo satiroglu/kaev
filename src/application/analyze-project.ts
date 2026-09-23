@@ -45,7 +45,7 @@ export async function analyzeProject(
   ) as AnalysisResult["summary"]["counts"];
   return {
     schemaVersion: 1,
-    zetvikVersion: VERSION,
+    kaevVersion: VERSION,
     generatedAt: new Date().toISOString(),
     project,
     findings: processed,

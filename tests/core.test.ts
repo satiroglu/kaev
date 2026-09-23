@@ -147,7 +147,7 @@ it("prefers security findings, deduplicates and weights modernization less", asy
   const c = context("element.innerHTML = input;");
   const r = await runRules(sourceRules, c);
   const f = processFindings([...r.findings, ...r.findings], createRedactor(c.workspace));
-  expect(f.map((x) => x.ruleId)).toEqual(["ZET-SEC-003"]);
+  expect(f.map((x) => x.ruleId)).toEqual(["KAEV-SEC-003"]);
   const first = f[0];
   if (!first) throw new Error("missing");
   expect(scoring.score([{ ...first, severity: "critical", confidence: "high" }])).toBe(70);

@@ -6,4 +6,4 @@ Inspect `npm pack --dry-run`: only dist, README, docs and package metadata shoul
 
 The package is intentionally marked UNLICENSED pending the owner's distribution license choice. No repository URL or maintainer identity has been invented. This does not prevent local builds or packed-artifact verification.
 
-Dependency audits are separate from project analysis. Zetvik never runs npm audit on scanned applications. Third-party advisory status and reproducible verification results should be recorded for each release.
+Dependency audits are separate from project analysis. Kaev never runs npm audit on scanned applications. Third-party advisory status and reproducible verification results should be recorded for each release.

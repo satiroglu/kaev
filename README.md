@@ -1,8 +1,8 @@
-# Zetvik
+# Kaev
 
 Local SAPUI5, OpenUI5 and SAP Fiori project health, security and architecture analysis.
 
-Zetvik identifies the project context before applying checks. Findings include stable rule IDs, source locations, severity, confidence, an explicit rule basis, and actionable recommendations. It complements UI5 CLI, UI5 Linter, TypeScript, ESLint, SAP Fiori tools and runtime testing.
+Kaev identifies the project context before applying checks. Findings include stable rule IDs, source locations, severity, confidence, an explicit rule basis, and actionable recommendations. It complements UI5 CLI, UI5 Linter, TypeScript, ESLint, SAP Fiori tools and runtime testing.
 
 **Local analysis. No telemetry. No source-code upload.**
 
@@ -11,8 +11,8 @@ Zetvik identifies the project context before applying checks. Findings include s
 Requires Node.js 22.9 or newer. After this package is published:
 
 ```sh
-npx zetvik
-npm install --global zetvik
+npx @satiroglu/kaev
+npm install --global @satiroglu/kaev
 ```
 
 For the local v0.1 package:
@@ -21,38 +21,38 @@ For the local v0.1 package:
 npm ci --ignore-scripts
 npm run build
 npm pack
-npm install --global ./zetvik-0.1.0.tgz
+npm install --global ./satiroglu-kaev-0.1.0.tgz
 ```
 
-Run from the root of an individual UI5 project. Zetvik does not need to be installed inside that project. Installation may download dependencies; analysis itself runs offline.
+Run from the root of an individual UI5 project. Kaev does not need to be installed inside that project. Installation may download dependencies; analysis itself runs offline.
 
 ## Usage
 
 ```sh
-zetvik                              # equivalent to zetvik check
-zetvik check --verbose
-zetvik check --quiet
-zetvik check --category security
-zetvik check --severity high
-zetvik check --format json
-zetvik check --no-ui5-lint
-zetvik doctor
-zetvik report
-zetvik report --format json --output ./reports/zetvik.json
+kaev                              # equivalent to kaev check
+kaev check --verbose
+kaev check --quiet
+kaev check --category security
+kaev check --severity high
+kaev check --format json
+kaev check --no-ui5-lint
+kaev doctor
+kaev report
+kaev report --format json --output ./reports/kaev.json
 ```
 
-`check`, the default command, and `doctor` never write to the project. `report` creates only its requested report, using exclusive creation: existing files are never overwritten. Its default name is `zetvik-report-[package-name].md`. The parent directory must already exist; symlink parent directories are rejected. Absolute output paths explicitly select a destination outside the project.
+`check`, the default command, and `doctor` never write to the project. `report` creates only its requested report, using exclusive creation: existing files are never overwritten. Its default name is `kaev-report-[package-name].md`. The parent directory must already exist; symlink parent directories are rejected. Absolute output paths explicitly select a destination outside the project.
 
 JSON stdout contains only JSON. Errors go to stderr. Reports are UTF-8; report paths are printed to stderr. Output is readable without color, including with `NO_COLOR` or redirected output.
 
 ```text
-ZETVIK v0.1.0
+KAEV v0.1.0
 
 sales-app · sapui5 application
 UI5 1.120.21 · CLI spec 3.0 · freestyle · javascript · OData v2
 
 HIGH · HIGH confidence · Sensitive browser storage
-  webapp/util/Auth.js:41:5 · ZET-SEC-002
+  webapp/util/Auth.js:41:5 · KAEV-SEC-002
 
 Project Health 88/100 · Security Posture 88/100
 1 findings · 19 evaluated · 0 not applicable · 0 skipped · 0 unavailable
@@ -66,9 +66,9 @@ Categories: `project`, `config`, `ui5`, `odata`, `architecture`, `performance`, 
 
 - **Official:** directly documented UI5 guidance, such as stable IDs for flexibility.
 - **Derived:** a static-analysis interpretation of documented behavior, such as local processing of OData collections.
-- **Heuristic:** a Zetvik risk pattern, such as credential storage or unusually large binding limits.
+- **Heuristic:** a Kaev risk pattern, such as credential storage or unusually large binding limits.
 
-Zetvik does not invent SAP requirements. Severity describes potential impact; confidence describes detection certainty. Intentional small local datasets and manual requests can be legitimate. Review findings in their application context.
+Kaev does not invent SAP requirements. Severity describes potential impact; confidence describes detection certainty. Intentional small local datasets and manual requests can be legitimate. Review findings in their application context.
 
 See [rule catalogue](docs/rules.md), [scoring](docs/scoring.md), [architecture and trust boundary](docs/architecture.md), [JSON contract](docs/json.md), and [third-party dependency review](docs/dependency-security.md).
 
@@ -86,7 +86,7 @@ Stable-ID checks focus on selected `sap.m` controls in flexibility-enabled frees
 
 Dependency, generated and test directories are excluded by default. Files above 1 MiB, symlinks, binary files and oversized/deep repositories are excluded with diagnostics. Limits and exclusions can make analysis partial. Parsers do not execute source; XML DTDs are rejected. There is no persistent cache, user configuration execution, autofix, dependency installation, telemetry, baseline or suppression UX during analysis.
 
-Zetvik performs automated static analysis that can help identify security, maintainability, performance, architecture, and SAPUI5/OData risks. It does not replace backend authorization testing, runtime testing, penetration testing, or professional security review. A score of 100 is not a security guarantee.
+Kaev performs automated static analysis that can help identify security, maintainability, performance, architecture, and SAPUI5/OData risks. It does not replace backend authorization testing, runtime testing, penetration testing, or professional security review. A score of 100 is not a security guarantee.
 
 ## Development
 
@@ -106,6 +106,6 @@ Tests include positive/negative rule examples, project fixtures, malformed input
 
 ## Independence
 
-Zetvik is an independent developer tool and is not affiliated with, sponsored by, or endorsed by SAP SE.
+Kaev is an independent developer tool and is not affiliated with, sponsored by, or endorsed by SAP SE.
 
 SAP, SAPUI5, SAP Fiori and other SAP product names are trademarks or registered trademarks of SAP SE or its affiliates in Germany and other countries. Other names belong to their respective owners.

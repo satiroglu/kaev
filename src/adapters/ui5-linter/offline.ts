@@ -9,7 +9,7 @@ import tls from "node:tls";
 /** Invoke only in the isolated analyzer process, before loading the analyzer. */
 export function disableNetwork(): void {
   const offline = (): never => {
-    throw new Error("Network access is disabled during Zetvik analysis.");
+    throw new Error("Network access is disabled during Kaev analysis.");
   };
   net.Socket.prototype.connect = offline;
   tls.connect = offline;

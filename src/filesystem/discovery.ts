@@ -2,7 +2,7 @@ import { constants, type Dirent } from "node:fs";
 import { open, readdir, realpath } from "node:fs/promises";
 import path from "node:path";
 import type { Diagnostic } from "../core/types.js";
-import { ZetvikError } from "../shared/errors.js";
+import { KaevError } from "../shared/errors.js";
 
 export interface SourceFile {
   path: string;
@@ -55,7 +55,7 @@ export async function discover(
   try {
     canonical = await realpath(root);
   } catch {
-    throw new ZetvikError("filesystem", "Project directory is not accessible.");
+    throw new KaevError("filesystem", "Project directory is not accessible.");
   }
   const files: SourceFile[] = [];
   const diagnostics: Diagnostic[] = [];

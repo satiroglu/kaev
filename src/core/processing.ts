@@ -51,13 +51,13 @@ export function createRedactor(workspace: Workspace): (text: string) => string {
 export function processFindings(findings: Finding[], redact: (text: string) => string): Finding[] {
   const strong = new Set(
     findings
-      .filter((f) => ["ZET-SEC-003", "ZET-SEC-008"].includes(f.ruleId))
+      .filter((f) => ["KAEV-SEC-003", "KAEV-SEC-008"].includes(f.ruleId))
       .map((f) => `${f.file}:${f.line}:${f.column}`),
   );
   const unique = new Map<string, Finding>();
   for (const f of findings) {
     if (
-      ["ZET-ARCH-001", "ZET-ARCH-002"].includes(f.ruleId) &&
+      ["KAEV-ARCH-001", "KAEV-ARCH-002"].includes(f.ruleId) &&
       strong.has(`${f.file}:${f.line}:${f.column}`)
     )
       continue;

@@ -1,11 +1,11 @@
 {
-  "name": "zetvik",
+  "name": "@satiroglu/kaev",
   "version": "0.1.0",
   "description": "Local SAPUI5/Fiori project health, security and architecture analysis",
   "type": "module",
   "license": "UNLICENSED",
   "bin": {
-    "zetvik": "dist/cli/cli.js"
+    "kaev": "dist/cli/cli.js"
   },
   "exports": {
     ".": {

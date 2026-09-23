@@ -1,11 +1,11 @@
 # JSON contract — schemaVersion 1
 
-`zetvik check --format json` emits one UTF-8 JSON object and a newline, with no decorative stdout. Top-level keys:
+`kaev check --format json` emits one UTF-8 JSON object and a newline, with no decorative stdout. Top-level keys:
 
 | Key | Meaning |
 | --- | --- |
 | schemaVersion | Integer 1; breaking format changes require a new version |
-| zetvikVersion | Analyzer package version |
+| kaevVersion | Analyzer package version |
 | generatedAt | ISO timestamp; the only intentionally varying metadata |
 | project | Project-relative fingerprint; absolute root and service URLs are omitted |
 | scores | Project Health, Security Posture (nullable), and partial-coverage flag |

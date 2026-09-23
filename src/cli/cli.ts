@@ -6,7 +6,7 @@ import { runDoctor } from "../application/run-doctor.js";
 import { type Category, categories, type Severity, severities } from "../core/types.js";
 import { messages } from "../i18n/en.js";
 import { json, terminal } from "../reporters/index.js";
-import { EXIT, VERSION, ZetvikError } from "../shared/errors.js";
+import { EXIT, KaevError, VERSION } from "../shared/errors.js";
 
 interface Options {
   verbose?: boolean;
@@ -18,8 +18,8 @@ interface Options {
   output?: string;
 }
 const program = new Command()
-  .name("zetvik")
-  .description(`Zetvik — ${messages.tagline}`)
+  .name("kaev")
+  .description(`Kaev — ${messages.tagline}`)
   .version(VERSION)
   .exitOverride();
 function options(command: Command, report = false): Command {
@@ -42,7 +42,7 @@ function options(command: Command, report = false): Command {
 }
 async function check(o: Options, report = false): Promise<void> {
   if (o.quiet && o.verbose)
-    throw new ZetvikError("configuration", "--quiet and --verbose cannot be combined.");
+    throw new KaevError("configuration", "--quiet and --verbose cannot be combined.");
   const result = await analyzeProject(process.cwd(), o);
   if (report) {
     const file = await createReport(
@@ -70,7 +70,7 @@ options(program.command("report").description("Generate a detailed project repor
   .action((_o, command: Command) => check(command.optsWithGlobals<Options>(), true));
 program
   .command("doctor")
-  .description("Diagnose project and Zetvik setup")
+  .description("Diagnose project and Kaev setup")
   .action(async () => {
     const result = await runDoctor(process.cwd());
     process.stdout.write(result.output);
@@ -78,7 +78,7 @@ program
   });
 program.addHelpText(
   "after",
-  "\nExamples:\n  zetvik\n  zetvik check --category security\n  zetvik check --format json\n  zetvik report --output ./reports/zetvik.md\n  zetvik doctor\n",
+  "\nExamples:\n  kaev\n  kaev check --category security\n  kaev check --format json\n  kaev report --output ./reports/kaev.md\n  kaev doctor\n",
 );
 try {
   await program.parseAsync();
@@ -87,7 +87,7 @@ try {
     process.exitCode = error.exitCode === 0 ? EXIT.success : EXIT.failure;
   else {
     process.stderr.write(
-      `${error instanceof ZetvikError ? error.message : "Analysis failed unexpectedly; source details withheld."}\n`,
+      `${error instanceof KaevError ? error.message : "Analysis failed unexpectedly; source details withheld."}\n`,
     );
     process.exitCode = EXIT.failure;
   }

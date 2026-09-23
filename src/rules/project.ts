@@ -3,19 +3,19 @@ import { define } from "./catalog.js";
 export const projectRules = [
   define(
     {
-      id: "ZET-PROJ-001",
+      id: "KAEV-PROJ-001",
       title: "UI5 project could not be identified",
       category: "project",
       severity: "info",
       basis: "heuristic",
       why: "Insufficient UI5 evidence limits project-specific analysis.",
-      recommendation: "Run Zetvik from an individual UI5 project root.",
+      recommendation: "Run Kaev from an individual UI5 project root.",
     },
     ({ project }, f) => (project.detected ? [] : [f()]),
   ),
   define(
     {
-      id: "ZET-CONFIG-001",
+      id: "KAEV-CONFIG-001",
       title: "Manifest cannot be parsed",
       category: "config",
       severity: "high",
@@ -35,7 +35,7 @@ export const projectRules = [
   ),
   define(
     {
-      id: "ZET-CONFIG-002",
+      id: "KAEV-CONFIG-002",
       title: "Expected UI5 configuration is missing or malformed",
       category: "config",
       severity: "medium",
@@ -52,7 +52,7 @@ export const projectRules = [
   ),
   define(
     {
-      id: "ZET-CONFIG-003",
+      id: "KAEV-CONFIG-003",
       title: "UI5 project configuration is inconsistent",
       category: "config",
       severity: "medium",
@@ -72,7 +72,7 @@ export const projectRules = [
   ),
   define(
     {
-      id: "ZET-UI5-001",
+      id: "KAEV-UI5-001",
       title: "Interactive control lacks a stable ID",
       category: "ui5",
       severity: "medium",

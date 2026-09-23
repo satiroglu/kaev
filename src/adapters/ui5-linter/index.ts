@@ -136,7 +136,7 @@ export async function lintUi5(
       fix: false,
       ui5Config: {
         specVersion: "3.0",
-        metadata: { name: "zetvik-analysis" },
+        metadata: { name: "kaev-analysis" },
         type: "application",
         resources: { configuration: { paths: { webapp: root } } },
       },

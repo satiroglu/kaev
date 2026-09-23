@@ -1,10 +1,10 @@
-export class ZetvikError extends Error {
+export class KaevError extends Error {
   constructor(
     public readonly code: "filesystem" | "configuration" | "output" | "internal",
     message: string,
   ) {
     super(message);
-    this.name = "ZetvikError";
+    this.name = "KaevError";
   }
 }
 export const EXIT = { success: 0, threshold: 1, failure: 2 } as const;
