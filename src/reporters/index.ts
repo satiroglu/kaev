@@ -1,6 +1,6 @@
 import { type DisplayOptions, visibleFindings } from "../core/presentation.js";
 import { references } from "../core/standards.js";
-import type { AnalysisResult, Finding } from "../core/types.js";
+import { type AnalysisResult, categories, type Finding, type RuleStatus } from "../core/types.js";
 import { messages } from "../i18n/en.js";
 
 function location(f: Finding): string {
@@ -34,6 +34,47 @@ function scoreColor(score: number | null): keyof typeof ansi {
   if (score < 90) return "yellow";
   return "green";
 }
+const categoryNames: Record<(typeof categories)[number], string> = {
+  project: "Project",
+  config: "Configuration",
+  ui5: "UI5",
+  odata: "OData",
+  architecture: "Architecture",
+  performance: "Performance",
+  security: "Security",
+};
+const checkNames: Record<string, string> = {
+  "KAEV-PROJ-001": "UI5 project identification",
+  "KAEV-CONFIG-001": "Manifest readability",
+  "KAEV-CONFIG-002": "UI5 configuration availability",
+  "KAEV-CONFIG-003": "UI5 configuration consistency",
+  "KAEV-UI5-001": "Stable IDs for interactive controls",
+  "KAEV-ODATA-001": "OData collection filtering",
+  "KAEV-ODATA-002": "OData collection sorting",
+  "KAEV-ODATA-003": "OData model size limits",
+  "KAEV-ARCH-001": "UI5 model networking boundary",
+  "KAEV-ARCH-002": "UI5-managed DOM rendering",
+  "KAEV-PERF-001": "Model refresh placement",
+  "KAEV-SEC-001": "Frontend credential exposure",
+  "KAEV-SEC-002": "Sensitive browser storage",
+  "KAEV-SEC-003": "Dynamic HTML sanitization",
+  "KAEV-SEC-004": "Dynamic code execution",
+  "KAEV-SEC-005": "Backend transport encryption",
+  "KAEV-SEC-006": "Sensitive-value logging",
+  "KAEV-SEC-007": "Backend authorization boundary",
+  "KAEV-SEC-008": "CSRF protection for manual OData writes",
+  "UI5-LINTER": "Official UI5 Linter",
+};
+
+function ruleFindings(r: AnalysisResult, ruleId: string): Finding[] {
+  return r.findings.filter((finding) =>
+    ruleId === "UI5-LINTER" ? finding.ruleId.startsWith("UI5LINT/") : finding.ruleId === ruleId,
+  );
+}
+
+function ruleLabel(rule: RuleStatus): string {
+  return checkNames[rule.ruleId] ?? rule.title ?? rule.ruleId;
+}
 export function json(r: AnalysisResult, o: DisplayOptions = {}): string {
   const findings = visibleFindings(r, o);
   const display = {
@@ -55,18 +96,59 @@ export function terminal(r: AnalysisResult, o: DisplayOptions = {}): string {
         ...(r.project.legacy ? ["Legacy UI5 project detected"] : []),
         "",
       ];
-  for (const f of visibleFindings(r, o)) {
-    lines.push(
-      `${paint(f.severity.toUpperCase(), severityColor(f.severity), color)} · ${f.confidence.toUpperCase()} confidence · ${paint(f.title, "bold", color)}`,
-      `  ${paint(location(f), "cyan", color)} · ${paint(f.ruleId, "dim", color)}`,
-    );
-    if (o.verbose)
-      lines.push(
-        `  ${f.message}`,
-        `  Basis: ${f.basis}`,
-        ...f.referenceIds.map((id) => `  Reference: ${references[id]?.title ?? id}`),
-        `  ${f.recommendation}`,
-      );
+  const displayed = visibleFindings(r, o);
+  if (!o.quiet) lines.push(paint("Checks", "bold", color), "");
+  for (const category of categories) {
+    const rules = r.rules.filter((rule) => rule.category === category);
+    const categoryFindings = displayed.filter((finding) => finding.category === category);
+    if (!rules.length || (o.quiet && !categoryFindings.length)) continue;
+    lines.push(paint(categoryNames[category], "cyan", color));
+    for (const rule of rules) {
+      const findings = ruleFindings(r, rule.ruleId);
+      const visible = findings.filter((finding) => displayed.includes(finding));
+      if (o.quiet && !visible.length) continue;
+      if (rule.status === "evaluated" && findings.length > 0) {
+        const highest = findings[0]?.severity ?? "info";
+        lines.push(
+          `  ${paint("✗ ISSUE", severityColor(highest), color)}  ${ruleLabel(rule)} ${paint(`· ${rule.ruleId} · ${findings.length} finding(s)`, "dim", color)}`,
+        );
+        for (const finding of visible) {
+          lines.push(
+            `      ${paint(finding.severity.toUpperCase(), severityColor(finding.severity), color)} · ${finding.confidence.toUpperCase()} confidence · ${paint(location(finding), "cyan", color)}`,
+          );
+          if (o.verbose)
+            lines.push(
+              `      ${finding.message}`,
+              `      Basis: ${finding.basis}`,
+              ...finding.referenceIds.map(
+                (id) => `      Reference: ${references[id]?.title ?? id}`,
+              ),
+              `      Recommendation: ${finding.recommendation}`,
+            );
+        }
+        if (!visible.length)
+          lines.push(paint("      Findings hidden by the display severity filter.", "dim", color));
+      } else if (rule.status === "evaluated" && (rule.suppressedCount ?? 0) > 0) {
+        lines.push(
+          `  ${paint("⊘ SUPPRESSED", "yellow", color)}  ${ruleLabel(rule)} ${paint(`· ${rule.ruleId} · ${rule.suppressedCount} finding(s)`, "dim", color)}`,
+        );
+      } else if (rule.status === "evaluated") {
+        lines.push(
+          `  ${paint("✓ PASS", "green", color)}  ${ruleLabel(rule)} ${paint(`· ${rule.ruleId}`, "dim", color)}`,
+        );
+      } else {
+        const state =
+          rule.status === "not-applicable"
+            ? "− N/A"
+            : rule.status === "skipped"
+              ? "− SKIP"
+              : "! UNAVAILABLE";
+        lines.push(
+          `  ${paint(state, rule.status === "unavailable" ? "red" : "dim", color)}  ${ruleLabel(rule)} ${paint(`· ${rule.ruleId}`, "dim", color)}`,
+        );
+        if (o.verbose && rule.reason) lines.push(`      ${rule.reason}`);
+      }
+    }
     lines.push("");
   }
   const health = r.scores.projectHealth;
@@ -75,6 +157,17 @@ export function terminal(r: AnalysisResult, o: DisplayOptions = {}): string {
     `${paint("Project Health", "bold", color)} ${paint(`${health ?? "N/A"}/100`, scoreColor(health), color)} · ${paint("Security Posture", "bold", color)} ${paint(`${security ?? "N/A"}/100`, scoreColor(security), color)}`,
     `${r.summary.total} findings · ${r.summary.evaluated} evaluated · ${r.summary.notApplicable} not applicable · ${r.summary.skipped} skipped · ${r.summary.unavailable} unavailable`,
   );
+  const passed = r.rules.filter(
+    (rule) =>
+      rule.status === "evaluated" && !(rule.findingCount ?? 0) && !(rule.suppressedCount ?? 0),
+  ).length;
+  const issues = r.rules.filter(
+    (rule) => rule.status === "evaluated" && (rule.findingCount ?? 0) > 0,
+  ).length;
+  const suppressed = r.rules.filter((rule) => (rule.suppressedCount ?? 0) > 0).length;
+  lines.push(
+    `Checks: ${paint(String(passed), "green", color)} passed · ${paint(String(issues), issues ? "red" : "green", color)} with findings${suppressed ? ` · ${paint(String(suppressed), "yellow", color)} suppressed` : ""}`,
+  );
   const counts = (["critical", "high", "medium", "low", "info"] as const)
     .filter((severity) => r.summary.counts[severity] > 0)
     .map(
@@ -82,7 +175,7 @@ export function terminal(r: AnalysisResult, o: DisplayOptions = {}): string {
         `${paint(String(r.summary.counts[severity]), severityColor(severity), color)} ${severity}`,
     );
   if (counts.length) lines.push(`Severity: ${counts.join(" · ")}`);
-  const priorities = visibleFindings(r, o).slice(0, 3);
+  const priorities = displayed.slice(0, 3);
   if (priorities.length) {
     lines.push("", paint("Top priorities", "bold", color));
     for (const finding of priorities)
@@ -116,17 +209,37 @@ function xml(value: string): string {
 }
 
 export function junit(r: AnalysisResult): string {
-  const failures = r.findings.filter((f) => ["high", "critical"].includes(f.severity)).length;
-  const cases = r.findings
-    .map((f) => {
-      const detail = `${f.message}\n${f.recommendation}`;
-      const failure = ["high", "critical"].includes(f.severity)
-        ? `<failure type="${xml(f.severity)}" message="${xml(f.title)}">${xml(detail)}</failure>`
-        : `<system-out>${xml(detail)}</system-out>`;
-      return `<testcase classname="kaev.${xml(f.category)}" name="${xml(f.ruleId)}" file="${xml(f.file ?? "project")}"${f.line ? ` line="${f.line}"` : ""}>${failure}</testcase>`;
+  const failureRules = r.rules.filter((rule) =>
+    ruleFindings(r, rule.ruleId).some((f) => ["high", "critical"].includes(f.severity)),
+  );
+  const errors = r.rules.filter((rule) => rule.status === "unavailable").length;
+  const skipped = r.rules.filter(
+    (rule) =>
+      ["skipped", "not-applicable"].includes(rule.status) || (rule.suppressedCount ?? 0) > 0,
+  ).length;
+  const cases = r.rules
+    .map((rule) => {
+      const findings = ruleFindings(r, rule.ruleId);
+      const attributes = `classname="kaev.${xml(rule.category ?? "project")}" name="${xml(`${rule.ruleId}: ${ruleLabel(rule)}`)}"`;
+      if (rule.status === "unavailable")
+        return `<testcase ${attributes}><error message="${xml(rule.reason ?? "Rule unavailable")}"/></testcase>`;
+      if (["skipped", "not-applicable"].includes(rule.status))
+        return `<testcase ${attributes}><skipped message="${xml(rule.reason ?? rule.status)}"/></testcase>`;
+      if ((rule.suppressedCount ?? 0) > 0 && !findings.length)
+        return `<testcase ${attributes}><skipped message="${rule.suppressedCount} finding(s) suppressed by policy/baseline"/></testcase>`;
+      if (!findings.length) return `<testcase ${attributes}/>`;
+      const detail = findings
+        .map(
+          (finding) =>
+            `${finding.severity.toUpperCase()} ${location(finding)}: ${finding.message} ${finding.recommendation}`,
+        )
+        .join("\n");
+      return failureRules.includes(rule)
+        ? `<testcase ${attributes}><failure type="kaev-finding" message="${findings.length} finding(s)">${xml(detail)}</failure></testcase>`
+        : `<testcase ${attributes}><system-out>${xml(detail)}</system-out></testcase>`;
     })
     .join("");
-  return `<?xml version="1.0" encoding="UTF-8"?>\n<testsuites tests="${r.findings.length}" failures="${failures}"><testsuite name="Kaev" tests="${r.findings.length}" failures="${failures}">${cases}</testsuite></testsuites>\n`;
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<testsuites tests="${r.rules.length}" failures="${failureRules.length}" errors="${errors}" skipped="${skipped}"><testsuite name="Kaev" tests="${r.rules.length}" failures="${failureRules.length}" errors="${errors}" skipped="${skipped}">${cases}</testsuite></testsuites>\n`;
 }
 
 export function sarif(r: AnalysisResult): string {
@@ -231,13 +344,51 @@ export function markdown(r: AnalysisResult): string {
     ...(r.scores.partial ? [messages.partial, ""] : []),
     messages.limitation,
     "",
-    "## High-priority findings",
+    "## Check results",
     "",
   ];
-  for (const f of r.findings.filter((f) => ["critical", "high"].includes(f.severity)))
-    lines.push(`- ${f.ruleId}: ${e(f.title)} (${e(location(f))})`);
+  for (const category of categories) {
+    const rules = r.rules.filter((rule) => rule.category === category);
+    if (!rules.length) continue;
+    lines.push(
+      `### ${categoryNames[category]}`,
+      "",
+      "| Status | Check | Details |",
+      "| --- | --- | --- |",
+    );
+    for (const rule of rules) {
+      const findings = ruleFindings(r, rule.ruleId);
+      let status: string;
+      let details: string;
+      if (rule.status === "evaluated" && findings.length) {
+        status = "ISSUE";
+        details = `${findings.length} finding(s)`;
+      } else if (rule.status === "evaluated" && (rule.suppressedCount ?? 0) > 0) {
+        status = "SUPPRESSED";
+        details = `${rule.suppressedCount} finding(s) suppressed by policy/baseline`;
+      } else if (rule.status === "evaluated") {
+        status = "PASS";
+        details = "No finding detected";
+      } else if (rule.status === "not-applicable") {
+        status = "N/A";
+        details = rule.reason ?? "Not applicable";
+      } else if (rule.status === "skipped") {
+        status = "SKIPPED";
+        details = rule.reason ?? "Skipped";
+      } else {
+        status = "UNAVAILABLE";
+        details = rule.reason ?? "Could not be evaluated";
+      }
+      lines.push(`| ${status} | ${e(ruleLabel(rule))} (${rule.ruleId}) | ${e(details)} |`);
+    }
+    lines.push("");
+  }
+  lines.push("## High-priority findings", "");
+  const highPriority = r.findings.filter((f) => ["critical", "high"].includes(f.severity));
+  for (const f of highPriority) lines.push(`- ${f.ruleId}: ${e(f.title)} (${e(location(f))})`);
+  if (!highPriority.length) lines.push("- None.");
   for (const category of [...new Set(r.findings.map((f) => f.category))]) {
-    lines.push("", `## ${category}`, "");
+    lines.push("", `## Findings: ${categoryNames[category]}`, "");
     for (const f of r.findings.filter((f) => f.category === category))
       lines.push(
         `### ${f.ruleId} — ${e(f.title)}`,
@@ -266,8 +417,7 @@ export function markdown(r: AnalysisResult): string {
     "",
   );
   for (const d of r.diagnostics) lines.push(`- ${e(d.file ?? "project")}: ${e(d.message)}`);
-  for (const s of r.rules.filter((s) => s.status !== "evaluated"))
-    lines.push(`- ${s.ruleId}: ${s.status} — ${e(s.reason ?? "")}`);
+  if (!r.diagnostics.length) lines.push("- None.");
   lines.push("", messages.privacy, "");
   return lines.join("\n");
 }

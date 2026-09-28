@@ -14,6 +14,8 @@ export async function lintUi5(
       findings: [],
       status: {
         ruleId: "UI5-LINTER",
+        title: "Official UI5 Linter",
+        category: "ui5",
         status: "unavailable",
         reason: `UI5 Linter could not safely analyze this project (${reason}).`,
       },
@@ -27,6 +29,8 @@ export async function lintUi5(
       findings: [],
       status: {
         ruleId: "UI5-LINTER",
+        title: "Official UI5 Linter",
+        category: "ui5",
         status: "not-applicable",
         reason: "v0.1 adapter supports individual application roots.",
       },
@@ -36,6 +40,8 @@ export async function lintUi5(
       findings: [],
       status: {
         ruleId: "UI5-LINTER",
+        title: "Official UI5 Linter",
+        category: "ui5",
         status: "not-applicable",
         reason:
           "Official UI5 Linter requires a project manifest; legacy custom checks remain available.",
@@ -50,6 +56,8 @@ export async function lintUi5(
       findings: [],
       status: {
         ruleId: "UI5-LINTER",
+        title: "Official UI5 Linter",
+        category: "ui5",
         status: "not-applicable",
         reason: "No safe application sources.",
       },
@@ -142,7 +150,16 @@ export async function lintUi5(
               "Review this official rule using UI5 Linter and plan changes for the intended UI5 runtime.",
           });
       }
-      done({ findings, status: { ruleId: "UI5-LINTER", status: "evaluated" } });
+      done({
+        findings,
+        status: {
+          ruleId: "UI5-LINTER",
+          title: "Official UI5 Linter",
+          category: "ui5",
+          status: "evaluated",
+          findingCount: findings.length,
+        },
+      });
     });
     child.send({
       rootDir: c.project.rootPath,

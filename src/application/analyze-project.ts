@@ -38,7 +38,14 @@ export async function analyzeProject(
     const external = await lintUi5(context);
     findings.push(...external.findings);
     statuses.push(external.status);
-  } else statuses.push({ ruleId: "UI5-LINTER", status: "skipped", reason: "Disabled by options." });
+  } else
+    statuses.push({
+      ruleId: "UI5-LINTER",
+      title: "Official UI5 Linter",
+      category: "ui5",
+      status: "skipped",
+      reason: "Disabled by options.",
+    });
   const redact = createRedactor(context.workspace);
   const processed = processFindings(findings, redact);
   const { rootPath: _root, services: _services, models: _models, ...project } = context.project;

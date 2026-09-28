@@ -94,7 +94,26 @@ function withCounts(result: AnalysisResult, findings: AnalysisResult["findings"]
       findings.filter((finding) => finding.severity === severity).length,
     ]),
   ) as AnalysisResult["summary"]["counts"];
-  return { ...result, findings, summary: { ...result.summary, total: findings.length, counts } };
+  const countFor = (ruleId: string, source: AnalysisResult["findings"]): number =>
+    source.filter((finding) =>
+      ruleId === "UI5-LINTER" ? finding.ruleId.startsWith("UI5LINT/") : finding.ruleId === ruleId,
+    ).length;
+  const rules = result.rules.map((rule) => {
+    if (rule.status !== "evaluated") return rule;
+    const original = countFor(rule.ruleId, result.findings);
+    const active = countFor(rule.ruleId, findings);
+    return {
+      ...rule,
+      findingCount: active,
+      suppressedCount: Math.max(0, original - active),
+    };
+  });
+  return {
+    ...result,
+    findings,
+    rules,
+    summary: { ...result.summary, total: findings.length, counts },
+  };
 }
 
 function render(result: AnalysisResult, format: Format, options: Options, color: boolean): string {

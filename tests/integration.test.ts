@@ -64,6 +64,18 @@ it("colors terminal output only when explicitly enabled", async () => {
   expect(terminal(r)).not.toContain("\x1b");
   expect(terminal(r, { color: true })).toContain("\x1b[31mHIGH\x1b[0m");
 });
+it("groups passed and failed checks by category in human-readable reports", async () => {
+  const clean = await analyzeProject(fixture("clean-project"), { ui5Lint: false });
+  const insecure = await analyzeProject(fixture("insecure-project"), { ui5Lint: false });
+  expect(terminal(clean)).toContain("Configuration\n  ✓ PASS  Manifest readability");
+  expect(terminal(insecure)).toContain(
+    "Security\n  ✗ ISSUE  Frontend credential exposure · KAEV-SEC-001 · 1 finding(s)",
+  );
+  expect(markdown(clean)).toContain("| PASS | Manifest readability (KAEV-CONFIG-001) |");
+  expect(markdown(insecure)).toContain(
+    "| ISSUE | Frontend credential exposure (KAEV-SEC-001) | 1 finding\\(s\\) |",
+  );
+});
 it("produces valid CI reporters without terminal escapes", async () => {
   const r = await analyzeProject(fixture("insecure-project"), { ui5Lint: false });
   const sarifResult = JSON.parse(sarif(r));
@@ -71,6 +83,7 @@ it("produces valid CI reporters without terminal escapes", async () => {
   expect(sarifResult.runs[0].results.length).toBe(r.findings.length);
   expect(junit(r)).toMatch(/^<\?xml version="1\.0"/);
   expect(junit(r)).toContain("<failure");
+  expect(junit(r)).toContain("KAEV-CONFIG-001: Manifest readability");
   expect(github(r)).toContain("::error ");
   expect(`${sarif(r)}${junit(r)}${github(r)}`).not.toContain("\x1b");
 });
@@ -158,6 +171,9 @@ it("CLI help, version, JSON, report and failures have stable behavior", async ()
   const afterBaseline = run(["check", "--format", "json", "--no-ui5-lint"], baselineDir);
   expect(afterBaseline.status).toBe(0);
   expect(JSON.parse(afterBaseline.stdout).findings).toHaveLength(0);
+  expect(run(["check", "--no-ui5-lint", "--no-color"], baselineDir).stdout).toContain(
+    "⊘ SUPPRESSED  Frontend credential exposure",
+  );
   const invalidDir = await temporary();
   await cp(fixture("clean-project"), invalidDir, { recursive: true });
   await writeFile(path.join(invalidDir, ".kaevrc.json"), '{"version":1,"unknown":true}');

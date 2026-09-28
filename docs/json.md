@@ -12,9 +12,11 @@
 | summary | Finding severity counts, file count and rule-status counts |
 | findings | Deterministically ordered normalized findings |
 | diagnostics | Source-free parsing/discovery messages |
-| rules | Evaluated, skipped, not-applicable and unavailable rule statuses |
+| rules | Categorized evaluated, skipped, not-applicable and unavailable checks, including titles and finding counts |
 | display | Applied minimum severity and shown/total finding counts; summary and scores remain unfiltered |
 
 Findings have ruleId, category, kind, severity, confidence, title, message, basis, referenceIds, origin, whyItMatters and recommendation. File, line, column and bounded evidence are optional. Locations use project-relative POSIX paths and one-based line/column coordinates. Findings sort by descending severity, category, file, line, rule ID and column. Rule IDs and machine enums are stable public identifiers.
 
 Core interfaces are exported from the package. Consumers should tolerate additional fields and new rule IDs. JSON remains the native Kaev contract. Use `--format sarif`, `--format junit`, or `--format github` for standard CI integrations without embedding those formats in rule implementations.
+
+An evaluated rule with `findingCount: 0` passed its implemented check. A positive count means the rule produced active findings. `suppressedCount` records findings hidden by an explicit baseline or suppression policy; these must not be interpreted as a clean pass.

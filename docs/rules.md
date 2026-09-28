@@ -1,4 +1,4 @@
-# v0.1 rule catalogue
+# Rule catalogue
 
 All rules report confidence separately from severity. Rules never claim SAP mandates a heuristic. Source locations identify the syntax establishing evidence; a config-level issue may identify its file without a line when no reliable token location exists.
 

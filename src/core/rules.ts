@@ -49,24 +49,35 @@ export async function runRules(
   const findings: Finding[] = [];
   const statuses: RuleStatus[] = [];
   for (const rule of rules) {
+    const status = (
+      value: RuleStatus["status"],
+      reason?: string,
+      findingCount?: number,
+    ): RuleStatus => ({
+      ruleId: rule.meta.id,
+      title: rule.meta.title,
+      category: rule.meta.category,
+      status: value,
+      ...(reason ? { reason } : {}),
+      ...(findingCount !== undefined ? { findingCount } : {}),
+    });
     if (category && category !== rule.meta.category) {
-      statuses.push({ ruleId: rule.meta.id, status: "skipped", reason: "Category filter." });
+      statuses.push(status("skipped", "Category filter."));
       continue;
     }
     const reason = applicability(rule.meta.applicability, context.project);
     if (reason) {
-      statuses.push({ ruleId: rule.meta.id, status: "not-applicable", reason });
+      statuses.push(status("not-applicable", reason));
       continue;
     }
     try {
-      findings.push(...(await rule.run(context)));
-      statuses.push({ ruleId: rule.meta.id, status: "evaluated" });
+      const result = await rule.run(context);
+      findings.push(...result);
+      statuses.push(status("evaluated", undefined, result.length));
     } catch {
-      statuses.push({
-        ruleId: rule.meta.id,
-        status: "unavailable",
-        reason: "Rule failed; details withheld to protect source content.",
-      });
+      statuses.push(
+        status("unavailable", "Rule failed; details withheld to protect source content."),
+      );
     }
   }
   return { findings, statuses };

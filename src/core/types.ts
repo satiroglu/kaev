@@ -94,8 +94,12 @@ export interface Diagnostic {
 }
 export interface RuleStatus {
   ruleId: string;
+  title?: string;
+  category?: Category;
   status: "evaluated" | "skipped" | "not-applicable" | "unavailable";
   reason?: string;
+  findingCount?: number;
+  suppressedCount?: number;
 }
 export interface AnalysisResult {
   schemaVersion: 1;
