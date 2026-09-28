@@ -210,6 +210,10 @@ See the [LICENSE](LICENSE) file for the controlling terms. If you intend to offe
 
 Publishing a package publicly on npm makes its distributed files downloadable and inspectable. A proprietary license restricts legal rights; it does not technically hide the package contents. Use a private npm package or another authenticated registry if only approved users should be able to download it.
 
+## Developer and contact
+
+Kaev is developed by [Ahmet Ertürk (@aesatiroglu)](https://x.com/aesatiroglu). Questions, suggestions, and issue reports are welcome via X.
+
 ## Independence and trademarks
 
 Kaev is an independent developer tool. It is not affiliated with, sponsored by, or endorsed by SAP SE.

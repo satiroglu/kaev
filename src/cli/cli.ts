@@ -52,7 +52,15 @@ async function check(o: Options, report = false): Promise<void> {
       o.output,
     );
     process.stderr.write(`Report created: ${file}\n`);
-  } else process.stdout.write(o.format === "json" ? json(result, o) : terminal(result, o));
+  } else
+    process.stdout.write(
+      o.format === "json"
+        ? json(result, o)
+        : terminal(result, {
+            ...o,
+            color: process.stdout.isTTY && !("NO_COLOR" in process.env),
+          }),
+    );
   process.exitCode =
     result.summary.unavailable ||
     result.diagnostics.some((d) => ["parse", "filesystem", "configuration"].includes(d.code))

@@ -6,6 +6,34 @@ import { messages } from "../i18n/en.js";
 function location(f: Finding): string {
   return f.file ? `${f.file}${f.line ? `:${f.line}:${f.column ?? 1}` : ""}` : "project";
 }
+const ansi = {
+  bold: "\x1b[1m",
+  cyan: "\x1b[36m",
+  green: "\x1b[32m",
+  yellow: "\x1b[33m",
+  red: "\x1b[31m",
+  magenta: "\x1b[35m",
+  dim: "\x1b[2m",
+  reset: "\x1b[0m",
+} as const;
+
+function paint(value: string, color: keyof typeof ansi, enabled = false): string {
+  return enabled ? `${ansi[color]}${value}${ansi.reset}` : value;
+}
+
+function severityColor(severity: Finding["severity"]): keyof typeof ansi {
+  if (severity === "critical") return "magenta";
+  if (severity === "high") return "red";
+  if (severity === "medium") return "yellow";
+  if (severity === "low") return "cyan";
+  return "dim";
+}
+
+function scoreColor(score: number | null): keyof typeof ansi {
+  if (score === null || score < 70) return "red";
+  if (score < 90) return "yellow";
+  return "green";
+}
 export function json(r: AnalysisResult, o: DisplayOptions = {}): string {
   const findings = visibleFindings(r, o);
   const display = {
@@ -16,20 +44,21 @@ export function json(r: AnalysisResult, o: DisplayOptions = {}): string {
   return `${JSON.stringify({ ...r, findings, display }, null, 2)}\n`;
 }
 export function terminal(r: AnalysisResult, o: DisplayOptions = {}): string {
+  const color = o.color === true;
   const lines = o.quiet
     ? []
     : [
-        `KAEV v${r.kaevVersion}`,
+        paint(`KAEV v${r.kaevVersion}`, "bold", color),
         "",
-        `${r.project.packageName ?? "Project"} · ${r.project.framework} ${r.project.projectType}`,
+        `${paint(r.project.packageName ?? "Project", "cyan", color)} · ${r.project.framework} ${r.project.projectType}`,
         `UI5 ${r.project.ui5Version ?? "unknown"} · CLI spec ${r.project.ui5SpecVersion ?? "unknown"} · ${r.project.appType} · ${r.project.language} · OData ${r.project.odata}`,
         ...(r.project.legacy ? ["Legacy UI5 project detected"] : []),
         "",
       ];
   for (const f of visibleFindings(r, o)) {
     lines.push(
-      `${f.severity.toUpperCase()} · ${f.confidence.toUpperCase()} confidence · ${f.title}`,
-      `  ${location(f)} · ${f.ruleId}`,
+      `${paint(f.severity.toUpperCase(), severityColor(f.severity), color)} · ${f.confidence.toUpperCase()} confidence · ${paint(f.title, "bold", color)}`,
+      `  ${paint(location(f), "cyan", color)} · ${paint(f.ruleId, "dim", color)}`,
     );
     if (o.verbose)
       lines.push(
@@ -40,14 +69,16 @@ export function terminal(r: AnalysisResult, o: DisplayOptions = {}): string {
       );
     lines.push("");
   }
+  const health = r.scores.projectHealth;
+  const security = r.scores.securityPosture;
   lines.push(
-    `Project Health ${r.scores.projectHealth ?? "N/A"}/100 · Security Posture ${r.scores.securityPosture ?? "N/A"}/100`,
+    `${paint("Project Health", "bold", color)} ${paint(`${health ?? "N/A"}/100`, scoreColor(health), color)} · ${paint("Security Posture", "bold", color)} ${paint(`${security ?? "N/A"}/100`, scoreColor(security), color)}`,
     `${r.summary.total} findings · ${r.summary.evaluated} evaluated · ${r.summary.notApplicable} not applicable · ${r.summary.skipped} skipped · ${r.summary.unavailable} unavailable`,
   );
-  if (r.scores.partial) lines.push(messages.partial);
+  if (r.scores.partial) lines.push(paint(messages.partial, "yellow", color));
   for (const d of r.diagnostics)
     if (o.verbose || ["parse", "configuration", "filesystem"].includes(d.code))
-      lines.push(`Diagnostic: ${d.file ?? "project"}: ${d.message}`);
+      lines.push(paint(`Diagnostic: ${d.file ?? "project"}: ${d.message}`, "yellow", color));
   if (o.verbose) {
     lines.push(
       `Source roots: ${r.project.sourceRoots.join(", ") || "unresolved"}`,
@@ -56,7 +87,7 @@ export function terminal(r: AnalysisResult, o: DisplayOptions = {}): string {
     for (const s of r.rules)
       if (s.status !== "evaluated") lines.push(`${s.ruleId}: ${s.status} (${s.reason})`);
   }
-  lines.push(messages.limitation);
+  lines.push(paint(messages.limitation, "dim", color));
   return `${lines.join("\n")}\n`;
 }
 function escapeMarkdown(value: string): string {

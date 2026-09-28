@@ -58,6 +58,11 @@ it("redacts every reporter including verbose, and does not reveal absolute paths
   expect(JSON.parse(json(r)).schemaVersion).toBe(1);
   expect(markdown(r)).toContain("## High-priority findings");
 });
+it("colors terminal output only when explicitly enabled", async () => {
+  const r = await analyzeProject(fixture("insecure-project"), { ui5Lint: false });
+  expect(terminal(r)).not.toContain("\x1b");
+  expect(terminal(r, { color: true })).toContain("\x1b[31mHIGH\x1b[0m");
+});
 it("never overwrites an existing report or follows a report symlink", async () => {
   const r = await analyzeProject(fixture("clean-project"), { ui5Lint: false });
   const dir = await temporary();

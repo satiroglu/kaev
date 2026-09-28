@@ -3,6 +3,7 @@ export interface DisplayOptions {
   verbose?: boolean;
   quiet?: boolean;
   severity?: Severity;
+  color?: boolean;
 }
 export function visibleFindings(result: AnalysisResult, options: DisplayOptions): Finding[] {
   const minimum = options.severity ?? (options.quiet ? "high" : "info");
