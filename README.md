@@ -167,7 +167,7 @@ kaev check --no-ui5-lint
 
 ### `kaev report`
 
-Create a new report file. The default is `kaev-report-[package-name].md`:
+Create a new timestamped report file. The default name is `kaev-report-[package-name]-[local-timestamp].md`:
 
 ```sh
 kaev report
@@ -179,6 +179,14 @@ kaev report --format junit --output ./reports/kaev.xml
 ```
 
 The parent directory must already exist. Kaev rejects symbolic-link parent directories and refuses to overwrite an existing file.
+
+For example, a report generated in Istanbul may be named:
+
+```text
+kaev-report-sales-app-20260928-182100-125+0300.md
+```
+
+Human-readable Markdown shows both the computer's local timestamp and the canonical UTC timestamp. JSON keeps its existing UTC `generatedAt` value for stable machine processing.
 
 ### `kaev doctor`
 

@@ -2,6 +2,7 @@ import { type DisplayOptions, visibleFindings } from "../core/presentation.js";
 import { references } from "../core/standards.js";
 import { type AnalysisResult, categories, type Finding, type RuleStatus } from "../core/types.js";
 import { messages } from "../i18n/en.js";
+import { localIsoTimestamp } from "../shared/time.js";
 
 function location(f: Finding): string {
   return f.file ? `${f.file}${f.line ? `:${f.line}:${f.column ?? 1}` : ""}` : "project";
@@ -327,7 +328,7 @@ export function markdown(r: AnalysisResult): string {
   const lines = [
     `# Kaev project report`,
     "",
-    `Version: ${r.kaevVersion} · Generated: ${r.generatedAt}`,
+    `Version: ${r.kaevVersion} · Generated locally: ${localIsoTimestamp(r.generatedAt)} · UTC: ${r.generatedAt}`,
     "",
     `Project: ${e(r.project.packageName ?? "unnamed")}`,
     "",

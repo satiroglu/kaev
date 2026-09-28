@@ -91,7 +91,12 @@ it("never overwrites an existing report or follows a report symlink", async () =
   const r = await analyzeProject(fixture("clean-project"), { ui5Lint: false });
   const dir = await temporary();
   const output = await createReport(r, dir, "markdown");
+  expect(path.basename(output)).toMatch(
+    /^kaev-report-clean-ui5-project-\d{8}-\d{6}-\d{3}[+-]\d{4}\.md$/,
+  );
   expect(await readFile(output, "utf8")).toContain("# Kaev");
+  expect(await readFile(output, "utf8")).toContain("Generated locally:");
+  expect(await readFile(output, "utf8")).toContain(`UTC: ${r.generatedAt}`);
   await expect(createReport(r, dir, "markdown")).rejects.toThrow("never overwritten");
   await writeFile(path.join(dir, "secret.md"), "unchanged");
   await symlink(path.join(dir, "secret.md"), path.join(dir, "link.md"));

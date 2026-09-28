@@ -3,6 +3,7 @@ import path from "node:path";
 import type { AnalysisResult } from "../core/types.js";
 import { json, junit, markdown, sarif } from "../reporters/index.js";
 import { KaevError } from "../shared/errors.js";
+import { reportFilenameTimestamp } from "../shared/time.js";
 export async function createReport(
   result: AnalysisResult,
   root: string,
@@ -20,7 +21,8 @@ export async function createReport(
   const name = (result.project.packageName ?? "project")
     .replace(/[^a-zA-Z0-9_-]/g, "-")
     .slice(0, 80);
-  const target = path.resolve(root, output ?? `kaev-report-${name}${extension}`);
+  const timestamp = reportFilenameTimestamp(result.generatedAt);
+  const target = path.resolve(root, output ?? `kaev-report-${name}-${timestamp}${extension}`);
   if (path.extname(target).toLowerCase() !== extension)
     throw new KaevError("output", `Report output must use ${extension}.`);
   // Require an existing, non-symlink parent; never create directories implicitly.
