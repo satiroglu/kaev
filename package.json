@@ -1,6 +1,6 @@
 {
   "name": "@satiroglu/kaev",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Local SAPUI5/Fiori project health, security and architecture analysis",
   "type": "module",
   "license": "SEE LICENSE IN LICENSE",
@@ -43,7 +43,7 @@
     "prepack": "npm run build"
   },
   "dependencies": {
-    "@ui5/linter": "1.23.6",
+    "@ui5/linter": "1.23.7",
     "commander": "^13.1.0",
     "jsonc-parser": "^3.3.1",
     "saxes": "^6.0.0",

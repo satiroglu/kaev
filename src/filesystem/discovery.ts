@@ -50,6 +50,7 @@ export function safeRelative(value: string): boolean {
 }
 export async function discover(
   root: string,
+  options: { exclude?: string[] } = {},
 ): Promise<{ root: string; files: SourceFile[]; diagnostics: Diagnostic[] }> {
   let canonical: string;
   try {
@@ -61,6 +62,16 @@ export async function discover(
   const diagnostics: Diagnostic[] = [];
   let entriesSeen = 0;
   let bytes = 0;
+  const excluded = (name: string): boolean =>
+    (options.exclude ?? []).some((pattern) => {
+      const source = pattern
+        .replace(/[.+^${}()|[\]\\]/g, "\\$&")
+        .replace(/\*\*/g, "\0")
+        .replace(/\*/g, "[^/]*")
+        .replace(/\0/g, ".*")
+        .replace(/\?/g, "[^/]");
+      return new RegExp(`^${source}(?:/.*)?$`).test(name);
+    });
   async function walk(relative: string, depth: number): Promise<void> {
     if (depth > 32 || entriesSeen > 30000 || bytes > 50 * 1024 * 1024) {
       diagnostics.push({
@@ -87,6 +98,7 @@ export async function discover(
         return;
       }
       const name = relative ? `${relative}/${entry.name}` : entry.name;
+      if (excluded(name)) continue;
       if (entry.isSymbolicLink()) {
         diagnostics.push({ code: "symlink", file: name, message: "Symbolic link excluded." });
         continue;

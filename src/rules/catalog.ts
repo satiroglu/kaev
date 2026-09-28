@@ -20,6 +20,7 @@ export function define(
       id: d.id,
       title: d.title,
       description: d.why,
+      recommendation: d.recommendation,
       category: d.category,
       defaultSeverity: d.severity,
       basis: d.basis,

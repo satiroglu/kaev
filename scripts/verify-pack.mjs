@@ -51,8 +51,14 @@ try {
     repository,
   );
   const cli = path.join(temporary, "node_modules/@satiroglu/kaev/dist/cli/cli.js");
-  assert.equal(execute(process.execPath, [cli, "--version"], temporary).stdout.trim(), "0.1.0");
+  assert.equal(execute(process.execPath, [cli, "--version"], temporary).stdout.trim(), "0.2.0");
   assert(execute(process.execPath, [cli, "--help"], temporary).stdout.includes("doctor"));
+  assert(execute(process.execPath, [cli, "--help"], temporary).stdout.includes("baseline"));
+  assert(
+    execute(process.execPath, [cli, "explain", "KAEV-SEC-002"], temporary).stdout.includes(
+      "KAEV-SEC-002",
+    ),
+  );
   for (const [name, expected] of [
     ["clean-project", 0],
     ["insecure-project", 1],
@@ -80,6 +86,13 @@ try {
   }
   const clean = path.join(temporary, "clean-project");
   execute(process.execPath, [cli, "doctor"], clean);
+  assert.equal(
+    JSON.parse(execute(process.execPath, [cli, "--format", "sarif"], clean).stdout).version,
+    "2.1.0",
+  );
+  assert(
+    execute(process.execPath, [cli, "--format", "junit"], clean).stdout.includes("<testsuites"),
+  );
   execute(process.execPath, [cli, "--no-ui5-lint"], clean);
   execute(
     process.execPath,

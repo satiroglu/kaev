@@ -71,6 +71,11 @@ kaev check --quiet
 kaev check --category security
 kaev check --severity high
 kaev check --format json
+kaev check --format sarif > kaev.sarif
+kaev check --format junit > kaev-junit.xml
+kaev check --format github
+kaev check --fail-on medium
+kaev check --no-color
 kaev check --no-ui5-lint
 ```
 
@@ -82,6 +87,8 @@ Creates a Markdown or JSON report. By default, the report is named `kaev-report-
 kaev report
 kaev report --format json --output ./reports/kaev.json
 kaev report --category security --output ./reports/security.md
+kaev report --format sarif --output ./reports/kaev.sarif
+kaev report --format junit --output ./reports/kaev.xml
 ```
 
 The output file must not already exist and its parent directory must exist. Kaev rejects symlink parent directories and never overwrites an existing report. An absolute path explicitly selects a location outside the analyzed project.
@@ -94,6 +101,27 @@ Diagnoses project recognition, environment compatibility, and analyzer availabil
 kaev doctor
 ```
 
+### `kaev init`, `kaev baseline`, and `kaev explain`
+
+Create project configuration, accept current findings as a reviewable baseline, or inspect a rule:
+
+```sh
+kaev init
+kaev baseline
+kaev explain KAEV-SEC-002
+```
+
+Both writing commands refuse to overwrite existing files. Baseline fingerprints contain finding identity, not source code. Review and commit generated policy files so changes remain auditable.
+
+### `kaev workspace`
+
+Analyze UI5 projects in a monorepo. Discovery is bounded to four directory levels and 100 projects and excludes dependencies, build output, hidden directories, and symbolic links.
+
+```sh
+cd path/to/monorepo
+kaev workspace --fail-on high
+```
+
 ### Global options
 
 | Option | Meaning |
@@ -102,7 +130,12 @@ kaev doctor
 | `-q, --quiet` | Show significant findings only. |
 | `--category <name>` | Analyze one category: `project`, `config`, `ui5`, `odata`, `architecture`, `performance`, or `security`. |
 | `--severity <level>` | Set the minimum displayed severity: `info`, `low`, `medium`, `high`, or `critical`. Scores and exit status do not change. |
-| `--format <format>` | Use `terminal` or `json` for checks; `markdown` or `json` for reports. |
+| `--fail-on <level>` | Fail at `info`, `low`, `medium`, `high`, or `critical`; use `none` to report only. |
+| `--format <format>` | Checks support `terminal`, `json`, `sarif`, `junit`, and `github`; reports support `markdown`, `json`, `sarif`, and `junit`. |
+| `--color <mode>` | Select `auto`, `always`, or `never`. |
+| `--no-color` | Disable ANSI colors. The `NO_COLOR` environment variable is also honored. |
+| `--config <file>` | Load an alternative JSON configuration from the project root. |
+| `--baseline <file>` | Use an alternative baseline file from the project root. |
 | `--no-ui5-lint` | Skip official UI5 Linter integration. The skipped coverage remains visible. |
 | `-V, --version` | Print the installed Kaev version. |
 | `-h, --help` | Show command help. |
@@ -112,7 +145,7 @@ kaev doctor
 Terminal findings remain readable without color, with `NO_COLOR`, and when redirected. JSON mode writes only the JSON document to stdout; operational errors go to stderr.
 
 ```text
-KAEV v0.1.0
+KAEV v0.2.0
 
 sales-app · sapui5 application
 UI5 1.120.21 · CLI spec 3.0 · freestyle · javascript · OData v2
@@ -131,6 +164,34 @@ Project Health 88/100 · Security Posture 88/100
 | `2` | Analysis, configuration, or runtime failure; or a required analyzer was unavailable. |
 
 A severity filter only changes what is displayed. It never hides a failure from the score or exit status. Selecting a category narrows analysis and marks the score as partial. Unknown projects receive an informational finding and no numerical score. Skipped or unavailable coverage is reported explicitly.
+
+## Project policy and configuration
+
+Kaev loads `.kaevrc.json` from the analyzed project root. CLI options override configuration. Unknown keys, invalid values, unsafe paths, and malformed suppressions fail closed with exit code `2`.
+
+```json
+{
+  "version": 1,
+  "severity": "info",
+  "failOn": "high",
+  "ui5Lint": true,
+  "color": "auto",
+  "baseline": ".kaev-baseline.json",
+  "exclude": ["webapp/generated/**"],
+  "suppressions": [
+    {
+      "ruleId": "KAEV-PERF-001",
+      "file": "webapp/local/**",
+      "reason": "Approved small offline dataset; reviewed in ADR-014",
+      "expires": "2027-03-31"
+    }
+  ]
+}
+```
+
+Suppression reasons are mandatory and expiry dates use `YYYY-MM-DD`. Expired suppressions stop matching automatically. Baselines and suppressions affect displayed findings and the quality gate but never rewrite source files. Scores remain the analyzer's unmodified assessment.
+
+SARIF integrates with code-scanning systems, JUnit represents high and critical findings as failed cases, and GitHub format emits workflow annotations. Machine-readable formats never contain colors or progress messages.
 
 ## Rules and evidence
 
@@ -160,7 +221,7 @@ Modern UI5 compatibility findings are classified as modernization guidance rathe
 
 ## Analysis boundaries
 
-Version 0.1 primarily analyzes individual applications. It models application, component, library, theme-library, and module projects; honors configured resource paths; and recognizes common legacy layouts. Workspace-wide aggregation is not yet implemented. The official UI5 Linter adapter currently supports application roots; other project types still receive contextual output and applicable Kaev checks.
+Version 0.1 models application, component, library, theme-library, and module projects; honors configured resource paths; and recognizes common legacy layouts. `kaev workspace` runs bounded analysis across monorepo project roots. The official UI5 Linter adapter currently supports application roots; other project types still receive contextual output and applicable Kaev checks.
 
 Important limitations:
 
@@ -171,7 +232,7 @@ Important limitations:
 - Dynamic HTML is a review finding, not proof of exploitability. Manual OData writes do not prove a CSRF vulnerability. Frontend role checks do not prove missing backend authorization.
 - Dependency, generated, and test directories are excluded by default. Files larger than 1 MiB, symlinks, binary files, and oversized or deeply nested repositories are excluded with diagnostics.
 - Parsers do not execute application source, and XML DTDs are rejected.
-- There is no persistent cache, autofix, dependency installation, telemetry, baseline, or suppression interface during analysis.
+- There is no persistent cache, autofix, dependency installation, or telemetry. Baselines and suppressions are explicit, local, reviewable policy files.
 
 Kaev does not replace backend authorization tests, integration tests, browser/runtime tests, penetration testing, or professional security review. A score of 100 is not a security guarantee.
 

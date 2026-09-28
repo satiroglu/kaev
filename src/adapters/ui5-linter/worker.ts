@@ -1,7 +1,16 @@
-import type { UI5LinterOptions } from "@ui5/linter";
+import type { LintResult, UI5LinterOptions } from "@ui5/linter";
 import { disableNetwork } from "./offline.js";
 
 disableNetwork();
+function reply(message: { ok: boolean; results?: LintResult[] }): Promise<void> {
+  return new Promise((resolve) => {
+    if (!process.connected || !process.send) {
+      resolve();
+      return;
+    }
+    process.send(message, () => resolve());
+  });
+}
 // Only the installed analyzer is imported. Project configs/scripts are never imported.
 process.once("message", async (options: UI5LinterOptions) => {
   try {
@@ -13,10 +22,10 @@ process.once("message", async (options: UI5LinterOptions) => {
       coverage: false,
       details: false,
     });
-    process.send?.({ ok: true, results });
+    await reply({ ok: true, results });
   } catch {
-    process.send?.({ ok: false });
+    await reply({ ok: false });
   } finally {
-    process.disconnect();
+    if (process.connected) process.disconnect();
   }
 });

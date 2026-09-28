@@ -75,6 +75,21 @@ export function terminal(r: AnalysisResult, o: DisplayOptions = {}): string {
     `${paint("Project Health", "bold", color)} ${paint(`${health ?? "N/A"}/100`, scoreColor(health), color)} · ${paint("Security Posture", "bold", color)} ${paint(`${security ?? "N/A"}/100`, scoreColor(security), color)}`,
     `${r.summary.total} findings · ${r.summary.evaluated} evaluated · ${r.summary.notApplicable} not applicable · ${r.summary.skipped} skipped · ${r.summary.unavailable} unavailable`,
   );
+  const counts = (["critical", "high", "medium", "low", "info"] as const)
+    .filter((severity) => r.summary.counts[severity] > 0)
+    .map(
+      (severity) =>
+        `${paint(String(r.summary.counts[severity]), severityColor(severity), color)} ${severity}`,
+    );
+  if (counts.length) lines.push(`Severity: ${counts.join(" · ")}`);
+  const priorities = visibleFindings(r, o).slice(0, 3);
+  if (priorities.length) {
+    lines.push("", paint("Top priorities", "bold", color));
+    for (const finding of priorities)
+      lines.push(
+        `  ${paint(finding.ruleId, severityColor(finding.severity), color)} · ${finding.title}`,
+      );
+  }
   if (r.scores.partial) lines.push(paint(messages.partial, "yellow", color));
   for (const d of r.diagnostics)
     if (o.verbose || ["parse", "configuration", "filesystem"].includes(d.code))
@@ -89,6 +104,102 @@ export function terminal(r: AnalysisResult, o: DisplayOptions = {}): string {
   }
   lines.push(paint(messages.limitation, "dim", color));
   return `${lines.join("\n")}\n`;
+}
+
+function xml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
+}
+
+export function junit(r: AnalysisResult): string {
+  const failures = r.findings.filter((f) => ["high", "critical"].includes(f.severity)).length;
+  const cases = r.findings
+    .map((f) => {
+      const detail = `${f.message}\n${f.recommendation}`;
+      const failure = ["high", "critical"].includes(f.severity)
+        ? `<failure type="${xml(f.severity)}" message="${xml(f.title)}">${xml(detail)}</failure>`
+        : `<system-out>${xml(detail)}</system-out>`;
+      return `<testcase classname="kaev.${xml(f.category)}" name="${xml(f.ruleId)}" file="${xml(f.file ?? "project")}"${f.line ? ` line="${f.line}"` : ""}>${failure}</testcase>`;
+    })
+    .join("");
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<testsuites tests="${r.findings.length}" failures="${failures}"><testsuite name="Kaev" tests="${r.findings.length}" failures="${failures}">${cases}</testsuite></testsuites>\n`;
+}
+
+export function sarif(r: AnalysisResult): string {
+  const rules = [...new Map(r.findings.map((f) => [f.ruleId, f])).values()].map((f) => ({
+    id: f.ruleId,
+    name: f.title,
+    shortDescription: { text: f.title },
+    fullDescription: { text: f.whyItMatters },
+    help: { text: f.recommendation },
+    properties: { category: f.category, basis: f.basis, severity: f.severity },
+  }));
+  const level = (severity: Finding["severity"]): "error" | "warning" | "note" =>
+    ["critical", "high"].includes(severity) ? "error" : severity === "medium" ? "warning" : "note";
+  const results = r.findings.map((f) => ({
+    ruleId: f.ruleId,
+    level: level(f.severity),
+    message: { text: `${f.message} ${f.recommendation}` },
+    locations: f.file
+      ? [
+          {
+            physicalLocation: {
+              artifactLocation: { uri: f.file, uriBaseId: "%SRCROOT%" },
+              region: { startLine: f.line ?? 1, startColumn: f.column ?? 1 },
+            },
+          },
+        ]
+      : undefined,
+    properties: { severity: f.severity, confidence: f.confidence, basis: f.basis },
+  }));
+  return `${JSON.stringify(
+    {
+      $schema:
+        "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/main/Schemata/sarif-schema-2.1.0.json",
+      version: "2.1.0",
+      runs: [
+        {
+          tool: { driver: { name: "Kaev", version: r.kaevVersion, rules } },
+          originalUriBaseIds: { "%SRCROOT%": { uri: "./" } },
+          results,
+        },
+      ],
+    },
+    null,
+    2,
+  )}\n`;
+}
+
+function workflow(value: string): string {
+  return value.replace(/%/g, "%25").replace(/\r/g, "%0D").replace(/\n/g, "%0A");
+}
+function workflowProperty(value: string): string {
+  return workflow(value).replace(/:/g, "%3A").replace(/,/g, "%2C");
+}
+
+export function github(r: AnalysisResult): string {
+  return `${r.findings
+    .map((f) => {
+      const command = ["critical", "high"].includes(f.severity)
+        ? "error"
+        : f.severity === "medium"
+          ? "warning"
+          : "notice";
+      const properties = [
+        f.file ? `file=${workflowProperty(f.file)}` : undefined,
+        f.line ? `line=${f.line}` : undefined,
+        f.column ? `col=${f.column}` : undefined,
+        `title=${workflowProperty(`${f.ruleId}: ${f.title}`)}`,
+      ]
+        .filter(Boolean)
+        .join(",");
+      return `::${command} ${properties}::${workflow(`${f.message} ${f.recommendation}`)}`;
+    })
+    .join("\n")}\n`;
 }
 function escapeMarkdown(value: string): string {
   return value

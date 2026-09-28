@@ -17,4 +17,4 @@
 
 Findings have ruleId, category, kind, severity, confidence, title, message, basis, referenceIds, origin, whyItMatters and recommendation. File, line, column and bounded evidence are optional. Locations use project-relative POSIX paths and one-based line/column coordinates. Findings sort by descending severity, category, file, line, rule ID and column. Rule IDs and machine enums are stable public identifiers.
 
-Core interfaces are exported from the package. Consumers should tolerate additional fields and new rule IDs. JSON is designed to support later SARIF conversion without embedding SARIF concepts in rules.
+Core interfaces are exported from the package. Consumers should tolerate additional fields and new rule IDs. JSON remains the native Kaev contract. Use `--format sarif`, `--format junit`, or `--format github` for standard CI integrations without embedding those formats in rule implementations.

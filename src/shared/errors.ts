@@ -8,4 +8,4 @@ export class KaevError extends Error {
   }
 }
 export const EXIT = { success: 0, threshold: 1, failure: 2 } as const;
-export const VERSION = "0.1.0";
+export const VERSION = "0.2.0";

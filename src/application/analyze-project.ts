@@ -10,23 +10,31 @@ import { projectRules } from "../rules/project.js";
 import { sourceRules } from "../rules/source.js";
 import { VERSION } from "../shared/errors.js";
 
-export async function prepare(root: string) {
-  const discovered = await discover(root);
+export async function prepare(root: string, options: { exclude?: string[] } = {}) {
+  const discovered = await discover(root, options);
   const workspace = new Workspace(discovered.files, discovered.diagnostics);
   const project = detectProject(discovered.root, workspace);
   return { project, workspace };
 }
 export async function analyzeProject(
   root: string,
-  options: { category?: Category; ui5Lint?: boolean } = {},
+  options: {
+    category?: Category;
+    ui5Lint?: boolean;
+    exclude?: string[];
+    onProgress?: (message: string) => void;
+  } = {},
 ): Promise<AnalysisResult> {
-  const context = await prepare(root);
+  options.onProgress?.("Discovering and parsing project files");
+  const context = await prepare(root, { exclude: options.exclude });
+  options.onProgress?.("Running Kaev rules");
   const { findings, statuses } = await runRules(
     [...projectRules, ...sourceRules],
     context,
     options.category,
   );
   if (options.ui5Lint !== false && (!options.category || options.category === "ui5")) {
+    options.onProgress?.("Running UI5 Linter");
     const external = await lintUi5(context);
     findings.push(...external.findings);
     statuses.push(external.status);

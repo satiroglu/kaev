@@ -1,5 +1,6 @@
 import { execFileSync, spawnSync } from "node:child_process";
 import {
+  cp,
   mkdir,
   mkdtemp,
   readdir,
@@ -18,7 +19,7 @@ import { createReport } from "../src/application/create-report.js";
 import { runDoctor } from "../src/application/run-doctor.js";
 import type { AnalysisResult } from "../src/core/types.js";
 import { discover } from "../src/filesystem/discovery.js";
-import { json, markdown, terminal } from "../src/reporters/index.js";
+import { github, json, junit, markdown, sarif, terminal } from "../src/reporters/index.js";
 
 const fixture = (name: string) => path.resolve("tests/fixtures", name);
 const temps: string[] = [];
@@ -63,6 +64,16 @@ it("colors terminal output only when explicitly enabled", async () => {
   expect(terminal(r)).not.toContain("\x1b");
   expect(terminal(r, { color: true })).toContain("\x1b[31mHIGH\x1b[0m");
 });
+it("produces valid CI reporters without terminal escapes", async () => {
+  const r = await analyzeProject(fixture("insecure-project"), { ui5Lint: false });
+  const sarifResult = JSON.parse(sarif(r));
+  expect(sarifResult.version).toBe("2.1.0");
+  expect(sarifResult.runs[0].results.length).toBe(r.findings.length);
+  expect(junit(r)).toMatch(/^<\?xml version="1\.0"/);
+  expect(junit(r)).toContain("<failure");
+  expect(github(r)).toContain("::error ");
+  expect(`${sarif(r)}${junit(r)}${github(r)}`).not.toContain("\x1b");
+});
 it("never overwrites an existing report or follows a report symlink", async () => {
   const r = await analyzeProject(fixture("clean-project"), { ui5Lint: false });
   const dir = await temporary();
@@ -99,7 +110,7 @@ it("CLI help, version, JSON, report and failures have stable behavior", async ()
   const run = (args: string[], cwd = fixture("clean-project")) =>
     spawnSync(process.execPath, [cli, ...args], { cwd, encoding: "utf8" });
   expect(run(["--help"]).stdout).toContain("doctor");
-  expect(run(["--version"]).stdout.trim()).toBe("0.1.0");
+  expect(run(["--version"]).stdout.trim()).toBe("0.2.0");
   expect(run(["--bad-option"]).status).toBe(2);
   const result = run(["check", "--format", "json", "--no-ui5-lint"]);
   expect(result.status).toBe(0);
@@ -118,11 +129,45 @@ it("CLI help, version, JSON, report and failures have stable behavior", async ()
   ).toBe(true);
   expect(run(["--no-ui5-lint"]).stdout).toBe(run(["check", "--no-ui5-lint"]).stdout);
   expect(run(["--no-ui5-lint"], fixture("insecure-project")).status).toBe(1);
+  expect(run(["--no-ui5-lint", "--fail-on", "none"], fixture("insecure-project")).status).toBe(0);
+  expect(JSON.parse(run(["--no-ui5-lint", "--format", "sarif"]).stdout).version).toBe("2.1.0");
+  expect(run(["--no-ui5-lint", "--format", "junit"]).stdout).toContain("<testsuites");
+  expect(
+    run(["--no-ui5-lint", "--format", "github"], fixture("insecure-project")).stdout,
+  ).toContain("::");
+  expect(run(["explain", "KAEV-SEC-002"]).stdout).toContain("KAEV-SEC-002");
   expect(run(["doctor"]).status).toBe(0);
   const dir = await temporary();
   const out = path.join(dir, "report.md");
   expect(run(["report", "--no-ui5-lint", "--output", out]).status).toBe(0);
   expect(await readFile(out, "utf8")).toContain("# Kaev");
+  const configDir = await temporary();
+  await mkdir(path.join(configDir, "webapp"));
+  await writeFile(path.join(configDir, "ui5.yaml"), 'specVersion: "3.0"\ntype: application');
+  await writeFile(path.join(configDir, "webapp/Component.js"), "sap.ui.define([], () => {});");
+  expect(run(["init"], configDir).status).toBe(0);
+  expect(JSON.parse(await readFile(path.join(configDir, ".kaevrc.json"), "utf8")).version).toBe(1);
+  expect(run(["baseline", "--no-ui5-lint"], configDir).status).toBe(0);
+  expect(
+    JSON.parse(await readFile(path.join(configDir, ".kaev-baseline.json"), "utf8")).version,
+  ).toBe(1);
+  const baselineDir = await temporary();
+  await cp(fixture("insecure-project"), baselineDir, { recursive: true });
+  expect(run(["init"], baselineDir).status).toBe(0);
+  expect(run(["baseline", "--no-ui5-lint"], baselineDir).status).toBe(0);
+  const afterBaseline = run(["check", "--format", "json", "--no-ui5-lint"], baselineDir);
+  expect(afterBaseline.status).toBe(0);
+  expect(JSON.parse(afterBaseline.stdout).findings).toHaveLength(0);
+  const invalidDir = await temporary();
+  await cp(fixture("clean-project"), invalidDir, { recursive: true });
+  await writeFile(path.join(invalidDir, ".kaevrc.json"), '{"version":1,"unknown":true}');
+  expect(run(["check", "--no-ui5-lint"], invalidDir).status).toBe(2);
+  const monorepo = await temporary();
+  await mkdir(path.join(monorepo, "packages"));
+  await cp(fixture("clean-project"), path.join(monorepo, "packages/app"), { recursive: true });
+  const workspaceResult = run(["workspace", "--no-ui5-lint"], monorepo);
+  expect(workspaceResult.status).toBe(0);
+  expect(workspaceResult.stdout).toContain("=== app ===");
 }, 20000);
 it("blocks networking in the analyzer process without changing the parent process", () => {
   const uri = pathToFileURL(path.resolve("dist/adapters/ui5-linter/offline.js")).href;
@@ -172,15 +217,19 @@ it("official adapter runs without executing project config and preserves read-on
   const before = (await discover(dir)).files;
   // Exercise the built worker as installed users do, rather than asking Node to
   // execute an uncompiled worker.js alongside TypeScript test sources.
-  const child = spawnSync(
-    process.execPath,
-    [path.resolve("dist/cli/cli.js"), "check", "--format", "json"],
-    { cwd: dir, encoding: "utf8", timeout: 35000 },
-  );
-  expect(child.stderr).toBe("");
-  const r: AnalysisResult = JSON.parse(child.stdout);
-  expect(r.rules.find((r) => r.ruleId === "UI5-LINTER")?.status).toBe("evaluated");
-  expect(r.findings.some((f) => f.ruleId.startsWith("UI5LINT/"))).toBe(true);
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const child = spawnSync(
+      process.execPath,
+      [path.resolve("dist/cli/cli.js"), "check", "--format", "json"],
+      { cwd: dir, encoding: "utf8", timeout: 35000 },
+    );
+    expect(child.stderr).toBe("");
+    const r: AnalysisResult = JSON.parse(child.stdout);
+    expect(r.rules.find((rule) => rule.ruleId === "UI5-LINTER")).toMatchObject({
+      status: "evaluated",
+    });
+    expect(r.findings.some((finding) => finding.ruleId.startsWith("UI5LINT/"))).toBe(true);
+  }
   expect((await discover(dir)).files).toEqual(before);
 }, 40000);
 it("keeps manifest-less legacy projects useful when the official adapter is not applicable", async () => {

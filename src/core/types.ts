@@ -77,6 +77,7 @@ export interface RuleMetadata {
   id: string;
   title: string;
   description: string;
+  recommendation?: string;
   category: Category;
   defaultSeverity: Severity;
   basis: Basis;

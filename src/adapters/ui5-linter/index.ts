@@ -9,14 +9,15 @@ import type { Finding, RuleStatus } from "../../core/types.js";
 export async function lintUi5(
   c: RuleContext,
 ): Promise<{ findings: Finding[]; status: RuleStatus }> {
-  const unavailable = {
-    findings: [],
-    status: {
-      ruleId: "UI5-LINTER",
-      status: "unavailable",
-      reason: "UI5 Linter failed or cannot safely analyze this project.",
-    },
-  } as const;
+  const unavailable = (reason: string) =>
+    ({
+      findings: [],
+      status: {
+        ruleId: "UI5-LINTER",
+        status: "unavailable",
+        reason: `UI5 Linter could not safely analyze this project (${reason}).`,
+      },
+    }) as const;
   if (
     !c.project.detected ||
     !c.project.sourceRoots.length ||
@@ -59,10 +60,13 @@ export async function lintUi5(
     path.dirname(createRequire(import.meta.url).resolve("@ui5/linter/package.json")),
     "../..",
   );
+  const nodeMajor = Number.parseInt(process.versions.node.split(".")[0] ?? "0", 10);
+  // Node 24 removed the experimental spelling after promoting the permission model.
+  const permissionFlag = nodeMajor >= 24 ? "--permission" : "--experimental-permission";
   return new Promise((resolve) => {
     const child = fork(new URL("./worker.js", import.meta.url), [], {
       execArgv: [
-        "--experimental-permission",
+        permissionFlag,
         `--allow-fs-read=${packageRoot}`,
         `--allow-fs-read=${dependencyRoot}`,
         `--allow-fs-read=${c.project.rootPath}`,
@@ -77,19 +81,29 @@ export async function lintUi5(
       stdio: ["ignore", "ignore", "ignore", "ipc"],
     });
     let finished = false;
+    let exitTimer: ReturnType<typeof setTimeout> | undefined;
     const done = (value: { findings: readonly Finding[]; status: RuleStatus }) => {
       if (finished) return;
       finished = true;
       clearTimeout(timer);
+      if (exitTimer) clearTimeout(exitTimer);
       child.kill();
       resolve({ findings: [...value.findings], status: value.status });
     };
-    const timer = setTimeout(() => done(unavailable), 30000);
-    child.on("error", () => done(unavailable));
-    child.on("exit", () => done(unavailable));
+    const timer = setTimeout(() => done(unavailable("timeout")), 30000);
+    child.on("error", () => done(unavailable("worker-start-failed")));
+    // IPC messages and process exit are separate event streams. A short grace period
+    // prevents a valid queued result from being lost when runners deliver exit first.
+    child.on("exit", (code, signal) => {
+      exitTimer = setTimeout(
+        () =>
+          done(unavailable(signal ? "worker-terminated" : `worker-exited-${code ?? "unknown"}`)),
+        100,
+      );
+    });
     child.on("message", (message: { ok: boolean; results?: LintResult[] }) => {
       if (!message.ok || !Array.isArray(message.results)) {
-        done(unavailable);
+        done(unavailable("analyzer-rejected-project"));
         return;
       }
       if (
@@ -97,7 +111,7 @@ export async function lintUi5(
           (result) => result.fatalErrorCount > 0 || result.messages.some((m) => m.fatal),
         )
       ) {
-        done(unavailable);
+        done(unavailable("analyzer-fatal-result"));
         return;
       }
       const findings: Finding[] = [];

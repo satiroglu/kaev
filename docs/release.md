@@ -1,6 +1,6 @@
 # Release verification
 
-Run `npm run check`, then `npm run test:pack`. The latter installs the resulting tarball into a separate temporary consumer directory using an isolated npm cache. Run its installed executable against clean, insecure, malformed, legacy and custom-source-root fixtures, including the official adapter. Confirm help/version, doctor, check JSON and Markdown/JSON report creation.
+Run `npm run check`, then `npm run test:pack`. The latter installs the resulting tarball into a separate temporary consumer directory using an isolated npm cache. Run its installed executable against clean, insecure, malformed, legacy and custom-source-root fixtures, including the official adapter. Confirm help/version, doctor, JSON, SARIF, JUnit, and report creation. Verify that `package.json`, the CLI version constant, and packed `kaev --version` agree.
 
 Inspect `npm pack --dry-run`: only dist, README, LICENSE, docs and package metadata should ship. Fixture projects and test sources must not ship. Verify no project tree changes before/after analysis. Do not publish until the package name/ownership, registry access and release authorization are settled.
 

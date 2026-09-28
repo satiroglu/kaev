@@ -1,15 +1,22 @@
 import { lstat, open, realpath } from "node:fs/promises";
 import path from "node:path";
 import type { AnalysisResult } from "../core/types.js";
-import { json, markdown } from "../reporters/index.js";
+import { json, junit, markdown, sarif } from "../reporters/index.js";
 import { KaevError } from "../shared/errors.js";
 export async function createReport(
   result: AnalysisResult,
   root: string,
-  format: "json" | "markdown",
+  format: "json" | "markdown" | "sarif" | "junit",
   output?: string,
 ): Promise<string> {
-  const extension = format === "json" ? ".json" : ".md";
+  const extension =
+    format === "json"
+      ? ".json"
+      : format === "sarif"
+        ? ".sarif"
+        : format === "junit"
+          ? ".xml"
+          : ".md";
   const name = (result.project.packageName ?? "project")
     .replace(/[^a-zA-Z0-9_-]/g, "-")
     .slice(0, 80);
@@ -29,7 +36,16 @@ export async function createReport(
     const canonicalParent = await realpath(path.dirname(target));
     const handle = await open(path.join(canonicalParent, path.basename(target)), "wx", 0o600);
     try {
-      await handle.writeFile(format === "json" ? json(result) : markdown(result), "utf8");
+      await handle.writeFile(
+        format === "json"
+          ? json(result)
+          : format === "sarif"
+            ? sarif(result)
+            : format === "junit"
+              ? junit(result)
+              : markdown(result),
+        "utf8",
+      );
     } finally {
       await handle.close();
     }
