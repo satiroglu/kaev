@@ -128,12 +128,14 @@ it("CLI help, version, JSON, report and failures have stable behavior", async ()
   const run = (args: string[], cwd = fixture("clean-project")) =>
     spawnSync(process.execPath, [cli, ...args], { cwd, encoding: "utf8" });
   expect(run(["--help"]).stdout).toContain("doctor");
-  expect(run(["--version"]).stdout.trim()).toBe("0.2.0");
+  const expectedVersion = JSON.parse(await readFile(path.resolve("package.json"), "utf8")).version;
+  expect(run(["--version"]).stdout.trim()).toBe(expectedVersion);
   expect(run(["--bad-option"]).status).toBe(2);
   const result = run(["check", "--format", "json", "--no-ui5-lint"]);
   expect(result.status).toBe(0);
   expect(result.stderr).toBe("");
   expect(JSON.parse(result.stdout).schemaVersion).toBe(1);
+  expect(JSON.parse(result.stdout).kaevVersion).toBe(expectedVersion);
   expect(JSON.parse(result.stdout).project.packageName).toBe("clean-ui5-project");
   const filtered = run(
     ["check", "--format", "json", "--no-ui5-lint", "--severity", "critical"],
@@ -189,6 +191,24 @@ it("CLI help, version, JSON, report and failures have stable behavior", async ()
   const workspaceResult = run(["workspace", "--no-ui5-lint"], monorepo);
   expect(workspaceResult.status).toBe(0);
   expect(workspaceResult.stdout).toContain("=== app ===");
+
+  // Debug options (--debug and KAEV_DEBUG=1) and safe error handling
+  const safeRun = run(["baseline", "--baseline", "../outside.json"], dir);
+  expect(safeRun.status).toBe(2);
+  expect(safeRun.stderr).toContain("Baseline must be a file in the project root.");
+  expect(safeRun.stderr).not.toContain("at ");
+
+  const debugRun = run(["baseline", "--debug", "--baseline", "../outside.json"], dir);
+  expect(debugRun.status).toBe(2);
+  expect(debugRun.stderr).toContain("at ");
+
+  const envDebugRun = spawnSync(
+    process.execPath,
+    [cli, "baseline", "--baseline", "../outside.json"],
+    { cwd: dir, encoding: "utf8", env: { ...process.env, KAEV_DEBUG: "1" } },
+  );
+  expect(envDebugRun.status).toBe(2);
+  expect(envDebugRun.stderr).toContain("at ");
 }, 20000);
 it("blocks networking in the analyzer process without changing the parent process", () => {
   const uri = pathToFileURL(path.resolve("dist/adapters/ui5-linter/offline.js")).href;

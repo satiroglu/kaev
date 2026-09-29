@@ -5,6 +5,12 @@ import { fileURLToPath } from "node:url";
 import type { LintResult } from "@ui5/linter";
 import type { RuleContext } from "../../core/rules.js";
 import type { Finding, RuleStatus } from "../../core/types.js";
+import { normalizeExternalFindingPath } from "../../filesystem/paths.js";
+
+// Node 24 removed the experimental spelling after promoting the permission model.
+export function getPermissionFlag(nodeMajor: number): string {
+  return nodeMajor >= 24 ? "--permission" : "--experimental-permission";
+}
 
 export async function lintUi5(
   c: RuleContext,
@@ -69,8 +75,7 @@ export async function lintUi5(
     "../..",
   );
   const nodeMajor = Number.parseInt(process.versions.node.split(".")[0] ?? "0", 10);
-  // Node 24 removed the experimental spelling after promoting the permission model.
-  const permissionFlag = nodeMajor >= 24 ? "--permission" : "--experimental-permission";
+  const permissionFlag = getPermissionFlag(nodeMajor);
   return new Promise((resolve) => {
     const child = fork(new URL("./worker.js", import.meta.url), [], {
       execArgv: [
@@ -124,10 +129,8 @@ export async function lintUi5(
       }
       const findings: Finding[] = [];
       for (const result of message.results) {
-        const file = path.isAbsolute(result.filePath)
-          ? path.relative(c.project.rootPath, result.filePath).split(path.sep).join("/")
-          : result.filePath;
-        if (!allowed.some((f) => f.path === file)) continue;
+        const file = normalizeExternalFindingPath(c.project.rootPath, result.filePath);
+        if (!file || !allowed.some((f) => f.path === file)) continue;
         for (const m of result.messages)
           findings.push({
             ruleId: `UI5LINT/${m.ruleId}`,

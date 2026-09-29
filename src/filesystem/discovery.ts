@@ -3,6 +3,7 @@ import { open, readdir, realpath } from "node:fs/promises";
 import path from "node:path";
 import type { Diagnostic } from "../core/types.js";
 import { KaevError } from "../shared/errors.js";
+import { validateSourceRoot } from "./paths.js";
 
 export interface SourceFile {
   path: string;
@@ -40,13 +41,7 @@ const extensions = new Set([
   ".html",
 ]);
 export function safeRelative(value: string): boolean {
-  return (
-    !path.isAbsolute(value) &&
-    !/^[A-Za-z]:/.test(value) &&
-    !value.includes("\\") &&
-    !value.split("/").includes("..") &&
-    !value.includes("\0")
-  );
+  return validateSourceRoot(value);
 }
 export async function discover(
   root: string,

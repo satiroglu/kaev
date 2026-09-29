@@ -4,6 +4,7 @@ import { literal, walk } from "../analysis/ast.js";
 import { at, object, string, type Workspace } from "../analysis/workspace.js";
 import type { ProjectContext } from "../core/types.js";
 import { safeRelative } from "../filesystem/discovery.js";
+import { normalizeWorkspacePath } from "../filesystem/paths.js";
 
 export function detectProject(root: string, w: Workspace): ProjectContext {
   const pkg = w.get("package.json");
@@ -21,7 +22,7 @@ export function detectProject(root: string, w: Workspace): ProjectContext {
       : [paths[projectType === "application" ? "webapp" : "src"]];
   const sourceRoots = configured
     .filter((p): p is string => typeof p === "string" && safeRelative(p))
-    .map((p) => p.replace(/\/$/, "") || ".");
+    .map((p) => normalizeWorkspacePath(p).replace(/\/$/, "") || ".");
   if (configured.some((p) => typeof p === "string" && !safeRelative(p)))
     w.diagnostics.push({
       code: "configuration",

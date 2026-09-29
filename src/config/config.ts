@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { type Category, categories, type Severity, severities } from "../core/types.js";
+import { validateRootFileName } from "../filesystem/paths.js";
 import { KaevError } from "../shared/errors.js";
 
 export const CONFIG_FILE = ".kaevrc.json";
@@ -101,20 +102,13 @@ function validate(value: unknown): KaevConfig {
 }
 
 export function safeConfigPath(value: string): boolean {
-  return (
-    value.length > 0 &&
-    !path.isAbsolute(value) &&
-    !/^[A-Za-z]:/.test(value) &&
-    !value.includes("\\") &&
-    !value.split("/").includes("..") &&
-    !value.includes("\0")
-  );
+  return validateRootFileName(value);
 }
 
 export async function loadConfig(root: string, explicit?: string): Promise<KaevConfig | undefined> {
-  const target = path.resolve(root, explicit ?? CONFIG_FILE);
-  if (explicit && path.dirname(target) !== path.resolve(root))
+  if (explicit && !validateRootFileName(explicit))
     throw new KaevError("configuration", "--config must name a file in the project root.");
+  const target = path.resolve(root, explicit ? path.basename(explicit) : CONFIG_FILE);
   try {
     const text = await readFile(target, "utf8");
     return validate(JSON.parse(text));

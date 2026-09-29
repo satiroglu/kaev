@@ -2,12 +2,14 @@ import ts from "typescript";
 import {
   imported,
   isOdataUrl,
+  isSyncNetworkCall,
   literal,
   method,
   modelVersion,
   network,
   odataCollection,
   property,
+  unwrap,
   walk,
 } from "../analysis/ast.js";
 import { plausibleSecret, secretName } from "../analysis/secrets.js";
@@ -41,6 +43,57 @@ function sourceRule(
     { requiresUi5: true, ...applicability },
   );
 }
+function findContainingController(
+  node: ts.Node,
+): ts.ObjectLiteralExpression | ts.ClassDeclaration | undefined {
+  let curr: ts.Node | undefined = node.parent;
+  while (curr) {
+    if (ts.isClassDeclaration(curr)) return curr;
+    if (ts.isObjectLiteralExpression(curr)) {
+      if (ts.isCallExpression(curr.parent) && method(curr.parent) === "extend") {
+        return curr;
+      }
+      const hasLifecycle = curr.properties.some(
+        (p) =>
+          (ts.isPropertyAssignment(p) || ts.isMethodDeclaration(p)) &&
+          ["onInit", "onExit", "onBeforeRendering", "onAfterRendering"].includes(
+            ts.isIdentifier(p.name) ? p.name.text : (literal(p.name) ?? ""),
+          ),
+      );
+      if (hasLifecycle) return curr;
+    }
+    curr = curr.parent;
+  }
+  return undefined;
+}
+
+function getControllerMethod(
+  controller: ts.ObjectLiteralExpression | ts.ClassDeclaration,
+  name: string,
+): ts.Node | undefined {
+  if (ts.isClassDeclaration(controller)) {
+    for (const member of controller.members) {
+      if (
+        ts.isMethodDeclaration(member) &&
+        ts.isIdentifier(member.name) &&
+        member.name.text === name
+      ) {
+        return member;
+      }
+    }
+  } else {
+    for (const prop of controller.properties) {
+      if (!prop.name) continue;
+      const propName = ts.isIdentifier(prop.name) ? prop.name.text : literal(prop.name);
+      if (propName === name) {
+        if (ts.isMethodDeclaration(prop)) return prop;
+        if (ts.isPropertyAssignment(prop)) return prop.initializer;
+      }
+    }
+  }
+  return undefined;
+}
+
 const recommendationOdata =
   "Consider UI5 list binding filters/sorters or service-side $filter/$orderby. Small intentional local datasets are valid exceptions.";
 export const sourceRules: Rule[] = [
@@ -63,7 +116,7 @@ export const sourceRules: Rule[] = [
         odataCollection(n.expression.expression, c.project)
           ? { confidence: "medium" }
           : undefined,
-      { odataVersions: ["v2"] },
+      { odataVersions: ["v2", "v4"] },
     ),
   ),
   sourceRule(
@@ -361,6 +414,177 @@ export const sourceRules: Rule[] = [
         ["POST", "PUT", "PATCH", "DELETE"].includes(call.method)
         ? { confidence: "medium" }
         : undefined;
+    },
+  ),
+  sourceRule(
+    {
+      id: "KAEV-SEC-010",
+      title: "Synchronous network request",
+      category: "performance",
+      severity: "high",
+      basis: "derived",
+      references: ["security"],
+      why: "Synchronous network requests block the browser main thread, causing UI freezes and poor user experience.",
+      recommendation:
+        "Replace synchronous calls with asynchronous Promise-based APIs or UI5 asynchronous model operations.",
+    },
+    (n, c) => (isSyncNetworkCall(n, c.project) ? { confidence: "high" } : undefined),
+  ),
+  sourceRule(
+    {
+      id: "KAEV-UI5-002",
+      title: "Global UI5 Core access",
+      category: "ui5",
+      severity: "low",
+      basis: "official",
+      kind: "modernization",
+      references: ["linter"],
+      why: "Accessing the global sap.ui.getCore() instance introduces global state dependencies and hinders modularity and testing.",
+      recommendation:
+        "Prefer view-scoped or component-scoped APIs (such as this.getView() or this.getOwnerComponent()), or import modern UI5 modules.",
+    },
+    (n) =>
+      ts.isCallExpression(n) &&
+      (n.expression.getText() === "sap.ui.getCore" ||
+        (ts.isPropertyAccessExpression(n.expression) &&
+          n.expression.name.text === "getCore" &&
+          n.expression.expression.getText() === "sap.ui")) &&
+      n.arguments.length === 0
+        ? { confidence: "high" }
+        : undefined,
+  ),
+  sourceRule(
+    {
+      id: "KAEV-LEAK-001",
+      title: "Event listener lifecycle cleanup",
+      category: "performance",
+      severity: "medium",
+      basis: "derived",
+      references: ["linter"],
+      why: "Event subscriptions attached during controller initialization without corresponding cleanup in onExit retain controller references and cause memory leaks.",
+      recommendation:
+        "Detach route match handlers and unsubscribe event bus listeners in onExit using consistent handler references.",
+    },
+    (n) => {
+      if (!ts.isCallExpression(n)) return;
+      const m = method(n);
+      if (!m) return;
+      const isRoute = m === "attachPatternMatched" || m === "attachRouteMatched";
+      const isBus =
+        m === "subscribe" &&
+        (n.expression.getText().includes("EventBus") ||
+          n.expression.getText().includes("getEventBus("));
+      if (!isRoute && !isBus) return;
+
+      const controller = findContainingController(n);
+      if (!controller) return;
+
+      let inInit = false;
+      let curr: ts.Node | undefined = n.parent;
+      while (curr && curr !== controller) {
+        if (
+          (ts.isMethodDeclaration(curr) || ts.isPropertyAssignment(curr)) &&
+          (ts.isIdentifier(curr.name) ? curr.name.text : literal(curr.name)) === "onInit"
+        ) {
+          inInit = true;
+          break;
+        }
+        curr = curr.parent;
+      }
+      if (!inInit) return;
+
+      const exitMethod = getControllerMethod(controller, "onExit");
+      if (!exitMethod) {
+        return { confidence: "medium" };
+      }
+
+      let boundDirectly = false;
+      for (const arg of n.arguments) {
+        const unwrapped = unwrap(arg);
+        if (ts.isCallExpression(unwrapped) && method(unwrapped) === "bind") {
+          boundDirectly = true;
+        }
+      }
+
+      const detachName = isRoute
+        ? m === "attachPatternMatched"
+          ? "detachPatternMatched"
+          : "detachRouteMatched"
+        : "unsubscribe";
+
+      let hasDetach = false;
+      const attachedReceiver = ts.isPropertyAccessExpression(n.expression)
+        ? n.expression.expression.getText()
+        : undefined;
+      const attachedArguments = n.arguments.map((argument) => unwrap(argument)?.getText());
+      walk(exitMethod, (child) => {
+        if (
+          !ts.isCallExpression(child) ||
+          method(child) !== detachName ||
+          !ts.isPropertyAccessExpression(child.expression) ||
+          child.expression.expression.getText() !== attachedReceiver ||
+          child.arguments.length !== attachedArguments.length
+        )
+          return;
+        hasDetach = child.arguments.every(
+          (argument, index) => unwrap(argument)?.getText() === attachedArguments[index],
+        );
+      });
+
+      if (!hasDetach || boundDirectly) {
+        return { confidence: "medium" };
+      }
+    },
+  ),
+  sourceRule(
+    {
+      id: "KAEV-LEAK-002",
+      title: "Timer lifecycle cleanup",
+      category: "performance",
+      severity: "medium",
+      basis: "derived",
+      references: ["linter"],
+      why: "Repeating interval timers created in controllers that are not cleared on exit continue running and leak memory and CPU cycles.",
+      recommendation: "Store the interval timer handle and clear it in onExit using clearInterval.",
+    },
+    (n) => {
+      if (!ts.isBinaryExpression(n) || n.operatorToken.kind !== ts.SyntaxKind.EqualsToken) return;
+      const left = unwrap(n.left);
+      if (
+        !ts.isPropertyAccessExpression(left) ||
+        left.expression.kind !== ts.SyntaxKind.ThisKeyword
+      )
+        return;
+      const propName = left.name.text;
+      const right = unwrap(n.right);
+      if (!ts.isCallExpression(right) || right.expression.getText() !== "setInterval") return;
+
+      const controller = findContainingController(n);
+      if (!controller) return;
+
+      const exitMethod = getControllerMethod(controller, "onExit");
+      if (!exitMethod) {
+        return { confidence: "medium" };
+      }
+
+      let cleared = false;
+      walk(exitMethod, (child) => {
+        if (ts.isCallExpression(child) && child.expression.getText() === "clearInterval") {
+          const arg = unwrap(child.arguments[0]);
+          if (
+            arg &&
+            ts.isPropertyAccessExpression(arg) &&
+            arg.expression.kind === ts.SyntaxKind.ThisKeyword &&
+            arg.name.text === propName
+          ) {
+            cleared = true;
+          }
+        }
+      });
+
+      if (!cleared) {
+        return { confidence: "medium" };
+      }
     },
   ),
 ];

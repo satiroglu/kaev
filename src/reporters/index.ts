@@ -50,6 +50,8 @@ const checkNames: Record<string, string> = {
   "KAEV-CONFIG-002": "UI5 configuration availability",
   "KAEV-CONFIG-003": "UI5 configuration consistency",
   "KAEV-UI5-001": "Stable IDs for interactive controls",
+  "KAEV-UI5-002": "Global UI5 Core access",
+  "KAEV-I18N-001": "Hardcoded user-facing XML text",
   "KAEV-ODATA-001": "OData collection filtering",
   "KAEV-ODATA-002": "OData collection sorting",
   "KAEV-ODATA-003": "OData model size limits",
@@ -64,6 +66,9 @@ const checkNames: Record<string, string> = {
   "KAEV-SEC-006": "Sensitive-value logging",
   "KAEV-SEC-007": "Backend authorization boundary",
   "KAEV-SEC-008": "CSRF protection for manual OData writes",
+  "KAEV-SEC-010": "Synchronous network requests",
+  "KAEV-LEAK-001": "Event listener lifecycle cleanup",
+  "KAEV-LEAK-002": "Timer lifecycle cleanup",
   "UI5-LINTER": "Official UI5 Linter",
 };
 

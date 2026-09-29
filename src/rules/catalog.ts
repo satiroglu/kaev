@@ -9,6 +9,7 @@ export interface Definition {
   why: string;
   recommendation: string;
   references?: string[];
+  kind?: Finding["kind"];
 }
 export function define(
   d: Definition,
@@ -38,13 +39,14 @@ export function define(
         basis: d.basis,
         confidence: "high",
         kind:
-          d.category === "security"
+          d.kind ??
+          (d.category === "security"
             ? "security"
             : d.category === "architecture"
               ? "architecture"
               : d.category === "odata" || d.category === "performance"
                 ? "performance"
-                : "configuration",
+                : "configuration"),
         whyItMatters: d.why,
         recommendation: d.recommendation,
         origin: "application",

@@ -51,7 +51,8 @@ try {
     repository,
   );
   const cli = path.join(temporary, "node_modules/@satiroglu/kaev/dist/cli/cli.js");
-  assert.equal(execute(process.execPath, [cli, "--version"], temporary).stdout.trim(), "0.2.0");
+  const pkg = JSON.parse(await readFile(path.join(repository, "package.json"), "utf8"));
+  assert.equal(execute(process.execPath, [cli, "--version"], temporary).stdout.trim(), pkg.version);
   assert(execute(process.execPath, [cli, "--help"], temporary).stdout.includes("doctor"));
   assert(execute(process.execPath, [cli, "--help"], temporary).stdout.includes("baseline"));
   assert(

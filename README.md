@@ -7,7 +7,7 @@ Kaev identifies the project context first, runs only applicable checks, and turn
 > **Local by design:** Kaev analyzes source code on your machine. It has no telemetry and does not upload project files.
 
 ```text
-KAEV v0.2.0
+KAEV v0.2.1
 
 sales-app · sapui5 application
 UI5 1.120.21 · CLI spec 3.0 · freestyle · javascript · OData v2
@@ -63,10 +63,12 @@ Kaev complements UI5 CLI, UI5 Linter, TypeScript, ESLint, SAP Fiori tools, runti
 - [Development](#development)
 - [License](#license)
 
-## Requirements
+## Requirements and Node.js Support Policy
 
-- Node.js `22.9.0` or newer
-- A SAPUI5/OpenUI5 project directory
+- **Officially Supported:** Node.js 22 (`>=22.12.0`) and Node.js 24 LTS.
+- **Enterprise Compatibility Support:** Node.js 20.11+ is temporarily supported on a best-effort basis for existing enterprise SAPUI5 environments. Support for Node.js 20 is deprecated and planned for removal in a future major release.
+- **Unsupported:** Node.js 18 and earlier fail safely at startup with exit code 2 and a message recommending Node 22 or 24 LTS.
+- A SAPUI5/OpenUI5 project directory.
 
 The analyzed project normally contains `ui5.yaml` and an application source directory such as `webapp/`. Kaev does not need to be installed in that project's dependencies. Package installation requires registry access; project analysis runs offline.
 
@@ -252,6 +254,7 @@ See [Monorepos](#monorepos) for discovery limits.
 | `--config <file>` | Use another JSON configuration file from the project root. |
 | `--baseline <file>` | Use another baseline file from the project root. |
 | `--no-ui5-lint` | Skip the official UI5 Linter integration and report partial coverage. |
+| `--debug` | Show sanitized stack traces and diagnostics on unexpected failure (also `KAEV_DEBUG=1`). |
 | `-V, --version` | Print the installed version. |
 | `-h, --help` | Show command help. |
 

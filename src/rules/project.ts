@@ -109,4 +109,53 @@ export const projectRules = [
     },
     { projectTypes: ["application"], appTypes: ["freestyle"], flexibility: true },
   ),
+  define(
+    {
+      id: "KAEV-I18N-001",
+      title: "Hardcoded user-facing XML text",
+      category: "ui5",
+      severity: "low",
+      basis: "heuristic",
+      why: "Hardcoded user-facing text in XML views bypasses UI5 translation models ({i18n>...}) and prevents application localization.",
+      recommendation:
+        "Replace hardcoded text with an i18n model binding such as {i18n>key} and maintain the corresponding message bundle.",
+    },
+    ({ workspace, project }, f) => {
+      const findings = [];
+      for (const [file, elements] of workspace.xml) {
+        if (
+          !/\.(view|fragment)\.xml$/.test(file) ||
+          !project.sourceRoots.some((r) => r === "." || file.startsWith(`${r}/`))
+        )
+          continue;
+        for (const e of elements) {
+          if (
+            e.uri === "sap.m" &&
+            ["Button", "Text", "Title", "Label"].includes(e.name) &&
+            typeof e.attributes.text === "string"
+          ) {
+            const val = e.attributes.text.trim();
+            if (
+              !val ||
+              (val.startsWith("{") && val.endsWith("}")) ||
+              /^\d+(\.\d+)?$/.test(val) ||
+              val.startsWith("sap-icon://") ||
+              val.startsWith("$")
+            )
+              continue;
+            findings.push(
+              f({
+                file,
+                line: e.line,
+                column: e.column,
+                message: `Static user-facing text on sap.m.${e.name} should use an i18n binding.`,
+              }),
+            );
+          }
+        }
+      }
+      return findings;
+    },
+    { projectTypes: ["application"] },
+  ),
 ];

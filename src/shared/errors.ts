@@ -1,3 +1,5 @@
+import { createRequire } from "node:module";
+
 export class KaevError extends Error {
   constructor(
     public readonly code: "filesystem" | "configuration" | "output" | "internal",
@@ -8,4 +10,15 @@ export class KaevError extends Error {
   }
 }
 export const EXIT = { success: 0, threshold: 1, failure: 2 } as const;
-export const VERSION = "0.2.0";
+
+function resolvePackageVersion(): string {
+  try {
+    const require = createRequire(import.meta.url);
+    const pkg = require("../../package.json") as { version?: string };
+    return typeof pkg?.version === "string" ? pkg.version : "0.0.0";
+  } catch {
+    return "0.0.0";
+  }
+}
+
+export const VERSION = resolvePackageVersion();

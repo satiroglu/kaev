@@ -9,8 +9,10 @@ All rules report confidence separately from severity. Rules never claim SAP mand
 | KAEV-CONFIG-002 | Missing config with declared UI5 CLI, or malformed config | Derived | Legacy projects without UI5 CLI do not require ui5.yaml |
 | KAEV-CONFIG-003 | Missing spec/type or component type below spec 5 | Official | Partial consistency check; does not replace CLI schema validation |
 | KAEV-UI5-001 | Selected sap.m XML controls without IDs in flexibility-enabled freestyle apps | Official | Other apps/controls are not checked; aggregation/template semantics need review |
-| KAEV-ODATA-001 | filter on a locally traced OData V2 collection | Derived | Small intentional client datasets can be valid; no arbitrary arrays |
-| KAEV-ODATA-002 | sort on a locally traced OData V2 collection | Derived | Same exceptions as filtering |
+| KAEV-UI5-002 | Direct sap.ui.getCore() calls | Official | Prefer view/component-scoped APIs or modern imported modules; classified as modernization |
+| KAEV-I18N-001 | Hardcoded static user-facing text in sap.m XML view/fragment controls | Heuristic | Numbers, technical IDs, icon URIs, and {i18n>...} bindings are excluded |
+| KAEV-ODATA-001 | filter on a locally traced OData V2/V4 collection | Derived | Small intentional client datasets can be valid; binding-level filters not flagged |
+| KAEV-ODATA-002 | sort on a locally traced OData V2/V4 collection | Derived | Same exceptions as filtering; binding-level sorters not flagged |
 | KAEV-ODATA-003 | Literal OData model size limit above 10,000 | Heuristic | A binding size limit does not by itself fetch the whole service |
 | KAEV-ARCH-001 | fetch, jQuery AJAX or XHR open targeting a configured/recognizable OData URL | Derived | Intentional low-level networking may be legitimate |
 | KAEV-ARCH-002 | innerHTML/outerHTML assignments in controller/component source | Heuristic | Custom rendering can be intentional; security finding takes precedence |
@@ -23,6 +25,9 @@ All rules report confidence separately from severity. Rules never claim SAP mand
 | KAEV-SEC-006 | Sensitive identifiers passed to supported log calls | Heuristic | No interprocedural taint tracking; harmless logs excluded |
 | KAEV-SEC-007 | Role/permission condition controlling UI5 visibility/enabled state | Heuristic | Verify backend independently; frontend-only evidence cannot establish missing authorization |
 | KAEV-SEC-008 | Direct POST/PUT/PATCH/DELETE to recognizable OData endpoint | Derived | Verify manual CSRF lifecycle; not a confirmed CSRF exploit |
+| KAEV-SEC-010 | Synchronous network requests via jQuery.ajax, XHR, or legacy ODataModel | Derived | Main-thread blocking calls freeze UI interaction and degrade user experience |
+| KAEV-LEAK-001 | Controller event subscriptions without matching onExit cleanup or with unstable handler references | Derived | Does not trace indirect teardown outside the analyzed controller |
+| KAEV-LEAK-002 | Uncancelled interval timers created on controller instances | Derived | Short-lived timeouts with self-termination are not reported |
 
 Official analyzer findings use `UI5LINT/[original-rule-id]`. Kaev does not reimplement UI5 deprecation/global rules. These are classified as modernization and scored conservatively. Explicit security checks add Kaev context and confidence.
 

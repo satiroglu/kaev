@@ -26,6 +26,10 @@ import { github, json, junit, markdown, sarif, terminal } from "../reporters/ind
 import { projectRules } from "../rules/project.js";
 import { sourceRules } from "../rules/source.js";
 import { EXIT, KaevError, VERSION } from "../shared/errors.js";
+import { sanitizeDebugError } from "./debug.js";
+import { enforceRuntimeVersion, warnDeprecatedRuntimeIfNeeded } from "./runtime.js";
+
+enforceRuntimeVersion();
 
 type Format = "terminal" | "json" | "markdown" | "sarif" | "junit" | "github";
 interface Options {
@@ -40,6 +44,7 @@ interface Options {
   color?: "auto" | "always" | "never" | false;
   config?: string;
   baseline?: string;
+  debug?: boolean;
 }
 
 const program = new Command()
@@ -84,6 +89,7 @@ function options(command: Command, report = false): Command {
     .option("--no-color", "Disable color output")
     .option("--config <file>", `Use a project-root config file (default: ${CONFIG_FILE})`)
     .option("--baseline <file>", "Use an explicit baseline file")
+    .option("--debug", "Enable debug diagnostics on unexpected failure")
     .option("--no-ui5-lint", "Skip official UI5 Linter integration");
 }
 
@@ -168,6 +174,7 @@ async function check(cli: Options, report = false): Promise<void> {
   const { options: selected, config } = await resolved(root, cli);
   if (selected.quiet && selected.verbose)
     throw new KaevError("configuration", "--quiet and --verbose cannot be combined.");
+  warnDeprecatedRuntimeIfNeeded({ quiet: selected.quiet, format: selected.format });
   const interactive = selected.format === "terminal" && !!process.stderr.isTTY;
   const progress = interactive
     ? (message: string) => process.stderr.write(`\r\x1b[2K${message}…`)
@@ -233,9 +240,10 @@ async function baseline(cli: Options): Promise<void> {
     ui5Lint: selected.ui5Lint,
     exclude: config.exclude,
   });
-  const target = path.resolve(root, selected.baseline ?? ".kaev-baseline.json");
-  if (!safeConfigPath(selected.baseline ?? ".kaev-baseline.json") || path.dirname(target) !== root)
+  const baselineFile = selected.baseline ?? ".kaev-baseline.json";
+  if (!safeConfigPath(baselineFile))
     throw new KaevError("configuration", "Baseline must be a file in the project root.");
+  const target = path.resolve(root, path.basename(baselineFile));
   await writeNew(target, `${JSON.stringify(createBaseline(result.findings), null, 2)}\n`);
   process.stdout.write(`Created ${target} with ${result.findings.length} finding(s).\n`);
 }
@@ -331,6 +339,7 @@ program
   .command("doctor")
   .description("Diagnose project and Kaev setup")
   .action(async () => {
+    warnDeprecatedRuntimeIfNeeded({ quiet: false, format: "terminal" });
     const result = await runDoctor(process.cwd());
     process.stdout.write(result.output);
     process.exitCode = result.ready ? EXIT.success : EXIT.failure;
@@ -345,9 +354,14 @@ try {
   if (error instanceof CommanderError)
     process.exitCode = error.exitCode === 0 ? EXIT.success : EXIT.failure;
   else {
-    process.stderr.write(
-      `${error instanceof KaevError ? error.message : "Analysis failed unexpectedly; source details withheld."}\n`,
-    );
+    const isDebug = process.argv.includes("--debug") || process.env.KAEV_DEBUG === "1";
+    if (isDebug) {
+      process.stderr.write(`${sanitizeDebugError(error, process.cwd())}\n`);
+    } else {
+      process.stderr.write(
+        `${error instanceof KaevError ? error.message : "Analysis failed unexpectedly; source details withheld."}\n`,
+      );
+    }
     process.exitCode = EXIT.failure;
   }
 }
