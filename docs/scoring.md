@@ -6,4 +6,4 @@ Modernization findings receive 25% of their normal weight; their combined penalt
 
 Project Health uses all evaluated findings. Security Posture uses only security findings. It is null when security was not analyzed. Unrecognized projects receive null scores. Skipped/unavailable checks, discovery diagnostics and category-only analysis mark scores partial; they never create passing points. Partial 100 means no weighted findings in the analyzed subset, not full project health.
 
-Display filters do not affect scoring or exit status. These weights and semantics are versioned with Kaev; changing them requires release notes. Baseline and organization thresholds are future capabilities.
+Display filters do not affect scoring or exit status. These weights and semantics are versioned with Kaev; changing them requires release notes. Active baselines and reviewed suppressions remove matching findings before score and quality-gate calculation; suppressed debt is still reported separately in rule status.

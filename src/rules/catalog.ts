@@ -27,7 +27,7 @@ export function define(
       basis: d.basis,
       references: d.references ?? [],
       applicability,
-      docs: { path: `/rules/${d.id}` },
+      docs: { path: "/reference/rules/" },
     },
     run: (c) =>
       run(c, (extra) => ({

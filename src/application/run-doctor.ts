@@ -1,7 +1,7 @@
 import { access } from "node:fs/promises";
 import { createRequire } from "node:module";
 import path from "node:path";
-import semver from "semver";
+import { evaluateRuntimeVersion } from "../cli/runtime.js";
 import { CONFIG_FILE, loadConfig } from "../config/config.js";
 import { createRedactor } from "../core/processing.js";
 import { VERSION } from "../shared/errors.js";
@@ -17,7 +17,7 @@ export async function runDoctor(root: string): Promise<{ output: string; ready: 
     adapter = false;
   }
   const ready =
-    semver.gte(process.versions.node, "22.9.0") &&
+    evaluateRuntimeVersion().supported &&
     project.detected &&
     project.sourceRoots.length > 0 &&
     !workspace.diagnostics.some((d) => ["parse", "filesystem", "configuration"].includes(d.code));

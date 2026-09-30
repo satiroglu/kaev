@@ -319,6 +319,7 @@ Example:
 | Property | Meaning |
 | --- | --- |
 | `version` | Configuration schema version. Must be `1`. |
+| `category` | Optional single category: `project`, `config`, `ui5`, `odata`, `architecture`, `performance`, or `security`. |
 | `severity` | Minimum displayed severity. |
 | `failOn` | Quality-gate threshold or `none`. |
 | `ui5Lint` | Enable or disable the official UI5 Linter integration. |
@@ -512,8 +513,8 @@ Kaev models application, component, library, theme-library, and module projects;
 Important limitations:
 
 - UI5 runtime, minimum runtime requirement, UI5 configuration specification, and UI5 CLI dependency version are distinct facts.
-- OData tracing is local rather than fully interprocedural. It covers known model imports and constructors, manifest-backed `getModel` calls, direct local aliases, V2 `read` success callbacks, and V2 `getProperty` usage.
-- V4 collection filtering/sorting tracing and dynamic URL construction are not implemented.
+- OData tracing is local rather than fully interprocedural. It covers known model imports and constructors, manifest-backed `getModel` calls, bounded local aliases, V2 `read` success callbacks and `getProperty`, plus V4 `bindList`/`bindContext` to `requestContexts` flows.
+- Fully dynamic URL construction and arbitrary cross-function data flow are not resolved. Static template and concatenation segments are handled only when they can be established safely.
 - Stable-ID checks focus on selected `sap.m` controls in flexibility-enabled freestyle applications.
 - Dynamic HTML is a review finding, not proof of exploitability.
 - Manual OData writes do not prove a CSRF vulnerability.

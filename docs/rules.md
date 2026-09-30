@@ -40,4 +40,4 @@ References are centrally resolved in `src/core/standards.ts`, not hardcoded into
 - [Official UI5 Linter rules](https://github.com/UI5/linter/blob/main/docs/Rules.md)
 - [SAPUI5 server-side filtering](https://help.sap.com/docs/SAPUI5/b2f662dd9d7a4ec680056733050b4d34/5338bd1f9afb45fb8b2af957c3530e8f.html)
 
-The docs metadata path `/rules/[ID]` is a future documentation resolver contract; it does not assume a hosted Kaev domain.
+Rule metadata points to the hosted catalogue path `/reference/rules/`; use `kaev explain <rule-id>` for the exact metadata shipped with the installed version.
