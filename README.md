@@ -4,7 +4,7 @@ Production-oriented health, security, performance, and architecture analysis for
 
 Kaev identifies the project context first, runs only applicable checks, and turns each finding into a source location, severity, confidence level, evidence basis, and actionable recommendation.
 
-[Website](https://kaev.org) · [Documentation](https://docs.kaev.org) · [Changelog](https://docs.kaev.org/changelog/) · [Source](https://github.com/satiroglu/kaev)
+[Website](https://kaev.org) · [Documentation](https://docs.kaev.org) · [Changelog](https://docs.kaev.org/changelog/)
 
 > **Local by design:** Kaev analyzes source code on your machine. It has no telemetry and does not upload project files.
 
