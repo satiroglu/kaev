@@ -4,6 +4,8 @@ Production-oriented health, security, performance, and architecture analysis for
 
 Kaev identifies the project context first, runs only applicable checks, and turns each finding into a source location, severity, confidence level, evidence basis, and actionable recommendation.
 
+[Website](https://kaev.org) · [Documentation](https://docs.kaev.org) · [Changelog](https://docs.kaev.org/changelog/) · [Source](https://github.com/satiroglu/kaev)
+
 > **Local by design:** Kaev analyzes source code on your machine. It has no telemetry and does not upload project files.
 
 ```text
@@ -135,11 +137,11 @@ A score can be marked partial when a category was selected, analysis coverage wa
 
 ### Exit codes
 
-| Code | Meaning |
-| --- | --- |
-| `0` | Analysis completed and no finding reached the configured failure threshold. |
-| `1` | Analysis completed and at least one finding reached the failure threshold. |
-| `2` | Analysis, configuration, filesystem, or required-analyzer failure. |
+| Code | Meaning                                                                     |
+| ---- | --------------------------------------------------------------------------- |
+| `0`  | Analysis completed and no finding reached the configured failure threshold. |
+| `1`  | Analysis completed and at least one finding reached the failure threshold.  |
+| `2`  | Analysis, configuration, filesystem, or required-analyzer failure.          |
 
 The default failure threshold is `high`. Change it without changing the report contents:
 
@@ -241,35 +243,35 @@ See [Monorepos](#monorepos) for discovery limits.
 
 ### Options
 
-| Option | Meaning |
-| --- | --- |
-| `-v, --verbose` | Show detailed evidence, references, diagnostics, and recommendations. |
-| `-q, --quiet` | Show significant findings only. Cannot be combined with `--verbose`. |
-| `--category <name>` | Analyze `project`, `config`, `ui5`, `odata`, `architecture`, `performance`, or `security`. |
-| `--severity <level>` | Minimum displayed severity; does not change scores or exit status. |
-| `--fail-on <level>` | Lowest severity that fails the quality gate, or `none`. |
-| `--format <format>` | Select an output format supported by the current command. |
-| `--color <mode>` | Use `auto`, `always`, or `never`. |
-| `--no-color` | Disable ANSI color. `NO_COLOR` is also honored. |
-| `--config <file>` | Use another JSON configuration file from the project root. |
-| `--baseline <file>` | Use another baseline file from the project root. |
-| `--no-ui5-lint` | Skip the official UI5 Linter integration and report partial coverage. |
-| `--debug` | Show sanitized stack traces and diagnostics on unexpected failure (also `KAEV_DEBUG=1`). |
-| `-V, --version` | Print the installed version. |
-| `-h, --help` | Show command help. |
+| Option               | Meaning                                                                                    |
+| -------------------- | ------------------------------------------------------------------------------------------ |
+| `-v, --verbose`      | Show detailed evidence, references, diagnostics, and recommendations.                      |
+| `-q, --quiet`        | Show significant findings only. Cannot be combined with `--verbose`.                       |
+| `--category <name>`  | Analyze `project`, `config`, `ui5`, `odata`, `architecture`, `performance`, or `security`. |
+| `--severity <level>` | Minimum displayed severity; does not change scores or exit status.                         |
+| `--fail-on <level>`  | Lowest severity that fails the quality gate, or `none`.                                    |
+| `--format <format>`  | Select an output format supported by the current command.                                  |
+| `--color <mode>`     | Use `auto`, `always`, or `never`.                                                          |
+| `--no-color`         | Disable ANSI color. `NO_COLOR` is also honored.                                            |
+| `--config <file>`    | Use another JSON configuration file from the project root.                                 |
+| `--baseline <file>`  | Use another baseline file from the project root.                                           |
+| `--no-ui5-lint`      | Skip the official UI5 Linter integration and report partial coverage.                      |
+| `--debug`            | Show sanitized stack traces and diagnostics on unexpected failure (also `KAEV_DEBUG=1`).   |
+| `-V, --version`      | Print the installed version.                                                               |
+| `-h, --help`         | Show command help.                                                                         |
 
 ## Reports and output formats
 
 Kaev separates human-readable reports from machine-readable CI output.
 
-| Format | Command | Intended use |
-| --- | --- | --- |
-| Terminal | `kaev check` | Interactive local review with automatic color. |
-| Markdown | `kaev report` | Detailed, shareable `.md` report. |
-| JSON | `kaev check --format json` | Stable machine-readable Kaev schema. |
-| SARIF | `kaev check --format sarif` | Code-scanning and security platforms. |
-| JUnit XML | `kaev check --format junit` | CI test-report systems, including passed and non-applicable checks. |
-| GitHub | `kaev check --format github` | GitHub Actions workflow annotations. |
+| Format    | Command                      | Intended use                                                        |
+| --------- | ---------------------------- | ------------------------------------------------------------------- |
+| Terminal  | `kaev check`                 | Interactive local review with automatic color.                      |
+| Markdown  | `kaev report`                | Detailed, shareable `.md` report.                                   |
+| JSON      | `kaev check --format json`   | Stable machine-readable Kaev schema.                                |
+| SARIF     | `kaev check --format sarif`  | Code-scanning and security platforms.                               |
+| JUnit XML | `kaev check --format junit`  | CI test-report systems, including passed and non-applicable checks. |
+| GitHub    | `kaev check --format github` | GitHub Actions workflow annotations.                                |
 
 Examples:
 
@@ -316,17 +318,17 @@ Example:
 }
 ```
 
-| Property | Meaning |
-| --- | --- |
-| `version` | Configuration schema version. Must be `1`. |
-| `category` | Optional single category: `project`, `config`, `ui5`, `odata`, `architecture`, `performance`, or `security`. |
-| `severity` | Minimum displayed severity. |
-| `failOn` | Quality-gate threshold or `none`. |
-| `ui5Lint` | Enable or disable the official UI5 Linter integration. |
-| `color` | `auto`, `always`, or `never`. |
-| `baseline` | Safe project-root-relative baseline filename. |
-| `exclude` | Bounded glob patterns excluded from discovery. |
-| `suppressions` | Reviewable rule/file exceptions with a mandatory reason. |
+| Property       | Meaning                                                                                                      |
+| -------------- | ------------------------------------------------------------------------------------------------------------ |
+| `version`      | Configuration schema version. Must be `1`.                                                                   |
+| `category`     | Optional single category: `project`, `config`, `ui5`, `odata`, `architecture`, `performance`, or `security`. |
+| `severity`     | Minimum displayed severity.                                                                                  |
+| `failOn`       | Quality-gate threshold or `none`.                                                                            |
+| `ui5Lint`      | Enable or disable the official UI5 Linter integration.                                                       |
+| `color`        | `auto`, `always`, or `never`.                                                                                |
+| `baseline`     | Safe project-root-relative baseline filename.                                                                |
+| `exclude`      | Bounded glob patterns excluded from discovery.                                                               |
+| `suppressions` | Reviewable rule/file exceptions with a mandatory reason.                                                     |
 
 Unknown properties, invalid enum values, unsafe paths, oversized policy lists, and malformed suppressions fail closed with exit code `2`.
 
@@ -491,20 +493,20 @@ Read the [architecture document](docs/architecture.md) for the complete trust mo
 
 ## Troubleshooting
 
-| Problem | What to do |
-| --- | --- |
-| `kaev: command not found` | Use `npx @satiroglu/kaev@latest`, install globally, or add Kaev as a project development dependency. |
-| `npx` runs an older release | Include `@latest`, verify with `npx @satiroglu/kaev@latest --version`, and review the local npm cache if needed. |
-| Command exits with code `1` | Analysis completed, but a finding reached the failure threshold. Review the report or change `--fail-on` deliberately. |
-| Command exits with code `2` | Run `kaev doctor`; inspect configuration, filesystem diagnostics, Node.js compatibility, and analyzer availability. |
-| `UI5-LINTER` is unavailable | Run `kaev doctor`, verify the supported Node.js version, and rerun with `--verbose`. Use `--no-ui5-lint` only as an explicit partial-coverage choice. |
-| Output has no colors | Colors are automatic only in an interactive terminal. Check `NO_COLOR`, redirection, and `--color` settings. |
-| JSON parsing fails | Use `--format json` directly and parse stdout only; diagnostics are written to stderr. |
-| Report already exists | Choose a new `--output` filename. Kaev intentionally has no overwrite flag. |
-| Report cannot be created | Create the parent directory first and ensure it is not a symbolic link. |
-| Baseline has no effect | Confirm the configured filename, run `kaev doctor`, and remember that changed finding identity creates a new fingerprint. |
-| A suppression stopped matching | Check its `expires` date, rule ID, and project-relative file glob. |
-| Project is not detected | Run from the UI5 project root containing `ui5.yaml` and the configured application source directory. |
+| Problem                        | What to do                                                                                                                                            |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `kaev: command not found`      | Use `npx @satiroglu/kaev@latest`, install globally, or add Kaev as a project development dependency.                                                  |
+| `npx` runs an older release    | Include `@latest`, verify with `npx @satiroglu/kaev@latest --version`, and review the local npm cache if needed.                                      |
+| Command exits with code `1`    | Analysis completed, but a finding reached the failure threshold. Review the report or change `--fail-on` deliberately.                                |
+| Command exits with code `2`    | Run `kaev doctor`; inspect configuration, filesystem diagnostics, Node.js compatibility, and analyzer availability.                                   |
+| `UI5-LINTER` is unavailable    | Run `kaev doctor`, verify the supported Node.js version, and rerun with `--verbose`. Use `--no-ui5-lint` only as an explicit partial-coverage choice. |
+| Output has no colors           | Colors are automatic only in an interactive terminal. Check `NO_COLOR`, redirection, and `--color` settings.                                          |
+| JSON parsing fails             | Use `--format json` directly and parse stdout only; diagnostics are written to stderr.                                                                |
+| Report already exists          | Choose a new `--output` filename. Kaev intentionally has no overwrite flag.                                                                           |
+| Report cannot be created       | Create the parent directory first and ensure it is not a symbolic link.                                                                               |
+| Baseline has no effect         | Confirm the configured filename, run `kaev doctor`, and remember that changed finding identity creates a new fingerprint.                             |
+| A suppression stopped matching | Check its `expires` date, rule ID, and project-relative file glob.                                                                                    |
+| Project is not detected        | Run from the UI5 project root containing `ui5.yaml` and the configured application source directory.                                                  |
 
 ## Analysis boundaries
 
@@ -549,7 +551,7 @@ See [LICENSE](LICENSE) for the controlling terms. Public npm publication makes p
 
 ## Developer and contact
 
-Kaev is developed by [Ahmet Ertürk (@aesatiroglu)](https://x.com/aesatiroglu). Questions, suggestions, and issue reports are welcome via X.
+Kaev is developed by [@aesatiroglu](https://x.com/aesatiroglu). Questions, suggestions, and issue reports are welcome via X.
 
 ## Independence and trademarks
 

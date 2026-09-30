@@ -2,6 +2,11 @@
   "name": "@satiroglu/kaev",
   "version": "0.3.0",
   "description": "Local SAPUI5/Fiori project health, security and architecture analysis",
+  "homepage": "https://kaev.org",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/satiroglu/kaev.git"
+  },
   "type": "module",
   "license": "SEE LICENSE IN LICENSE",
   "publishConfig": {
