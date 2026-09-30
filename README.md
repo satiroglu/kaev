@@ -7,7 +7,7 @@ Kaev identifies the project context first, runs only applicable checks, and turn
 > **Local by design:** Kaev analyzes source code on your machine. It has no telemetry and does not upload project files.
 
 ```text
-KAEV v0.2.1
+KAEV v0.3.0
 
 sales-app · sapui5 application
 UI5 1.120.21 · CLI spec 3.0 · freestyle · javascript · OData v2
